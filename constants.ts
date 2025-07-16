@@ -1016,3 +1016,27 @@ export const SUPERVISOR_ANALYSIS_SCHEMA = {
         }
     }
 };
+
+// Simulation scenarios for role-play practice
+export const SIMULATION_SCENARIOS = [
+    {
+        id: "cooper",
+        title: "Cooper Family",
+        summary: "The Cooper family case involves Sara Cooper, her children Jasmine (6) and Jasper (9 months), and her partner Shawn Olson. The case was initiated due to allegations of domestic violence perpetrated by Shawn against Sara in the children's presence, and drug use by both Sara and Shawn. The initial report came from Jasmine's school, where Jasmine disclosed witnessing Shawn being violent with her mother."
+    },
+    {
+        id: "baskin",
+        title: "Baskin Family", 
+        summary: "This case concerns Larisa Baskin and her two daughters, Karina (14) and Katie (3), and Larisa's boyfriend, Roger Cook. The case was initiated due to a report that Karina came to school with a black eye and a cut lip, and concerns about other marks on her arms."
+    },
+    {
+        id: "rich",
+        title: "Rich Family",
+        summary: "The Rich family case focuses on neglect allegations against parents Judith and Ted Rich concerning their children Daniel (11), Alberto (4), and Emily (15 months). An initial report was submitted from Daniel's school after he reported suffering from a toothache for several months, despite the school setting up dental visits for him, which he did not attend."
+    },
+    {
+        id: "tasi",
+        title: "Tasi Family",
+        summary: "This case file concerns the Tasi family, specifically addressing allegations of neglect involving Tammy Tasi and her children, Efren (15) and Malia (13). The initial report stemmed from an incident where Efren allegedly assaulted Malia in their mother's presence, causing an injury to Malia's eye. Concerns were also raised about the children being left home alone."
+    }
+];

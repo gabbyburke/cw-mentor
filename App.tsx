@@ -1,8 +1,8 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { AppState, Message, Page, SelfAssessment, CaseworkerAnalysis, SupervisorAnalysis } from './types';
-import { createChatSession, analyzeCaseworkerPerformance, analyzeSupervisorCoaching } from './geminiService.ts';
-import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT } from './constants';
+import { createChatSession, createMentorshipChatSession, createSimulationChatSession, analyzeCaseworkerPerformance, analyzeSupervisorCoaching } from './geminiService.ts';
+import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS } from './constants';
 import { 
     HomeIcon, BotIcon, UserIcon, SendIcon, SparklesIcon, ClipboardIcon, 
     CheckCircleIcon, LightbulbIcon, ChatBubbleLeftRightIcon, QuestionMarkCircleIcon 
@@ -180,7 +180,7 @@ const HomePage = ({ onSelectPage }: { onSelectPage: (page: Page) => void }) => (
           An AI partner to help you practice, get feedback, and grow your professional skills.
         </p>
         <div className="grid grid-cols-2 gap-6 mb-8">
-            <article onClick={() => onSelectPage('simulation')} className="card card-clickable">
+            <article onClick={() => onSelectPage('scenario-selection')} className="card card-clickable">
                 <ChatBubbleLeftRightIcon className="w-12 h-12 mb-3" style={{color: 'var(--primary)'}} />
                 <h3 className="h4">Counseling Simulation</h3>
                 <p style={{color: 'var(--on-surface-variant)', fontSize: '0.875rem', marginTop: 'var(--unit-1)'}}>Engage in a realistic role-play scenario to practice your skills.</p>
@@ -194,6 +194,74 @@ const HomePage = ({ onSelectPage }: { onSelectPage: (page: Page) => void }) => (
         <CurriculumDisplay />
     </div>
 );
+
+const ScenarioSelectionPage = ({ onScenarioSelect }: { onScenarioSelect: (scenario: typeof SIMULATION_SCENARIOS[0]) => void }) => {
+    const [selectedScenario, setSelectedScenario] = useState<typeof SIMULATION_SCENARIOS[0] | null>(null);
+
+    return (
+        <div className="max-w-4xl mx-auto">
+            <div className="mb-8">
+                <h2 className="h2 mb-4">Select a Practice Scenario</h2>
+                <p style={{color: 'var(--on-surface-variant)', fontSize: '1.125rem'}}>
+                    Choose a case scenario to practice your social work skills. Each scenario is based on real case files and will provide a realistic role-play experience.
+                </p>
+            </div>
+
+            <div className="space-y-6">
+                <div className="card">
+                    <h3 className="h4 mb-4">Available Scenarios</h3>
+                    <div className="space-y-3">
+                        {SIMULATION_SCENARIOS.map((scenario) => (
+                            <div 
+                                key={scenario.id}
+                                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                                    selectedScenario?.id === scenario.id 
+                                        ? 'border-blue-500 bg-blue-50' 
+                                        : 'border-gray-300 hover:border-gray-400'
+                                }`}
+                                onClick={() => setSelectedScenario(scenario)}
+                            >
+                                <div className="flex items-start gap-3">
+                                    <input
+                                        type="radio"
+                                        name="scenario"
+                                        checked={selectedScenario?.id === scenario.id}
+                                        onChange={() => setSelectedScenario(scenario)}
+                                        className="w-4 h-4 text-blue-600 mt-1"
+                                    />
+                                    <div className="flex-1">
+                                        <h4 className="h5 mb-2">{scenario.title}</h4>
+                                        <p className="text-sm text-gray-600 leading-relaxed">
+                                            {scenario.id === 'cooper' && 'Domestic violence and substance use allegations involving Sara Cooper and her partner Shawn.'}
+                                            {scenario.id === 'baskin' && 'Physical abuse concerns after 14-year-old Karina comes to school with injuries.'}
+                                            {scenario.id === 'rich' && 'Neglect case involving untreated dental issues and missed medical appointments.'}
+                                            {scenario.id === 'tasi' && 'Neglect allegations including sibling violence and children left unsupervised.'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {selectedScenario && (
+                    <div className="card">
+                        <h3 className="h4 mb-4">Case Summary: {selectedScenario.title}</h3>
+                        <p style={{color: 'var(--on-surface-variant)', fontSize: '0.875rem', lineHeight: '1.6', marginBottom: 'var(--unit-4)'}}>
+                            {selectedScenario.summary}
+                        </p>
+                        <button 
+                            onClick={() => onScenarioSelect(selectedScenario)}
+                            className="btn-primary"
+                        >
+                            Start Simulation
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const SimulationPage = ({ onComplete }: { onComplete: (transcript: Message[]) => void }) => {
     const [chatSession] = useState<Chat>(() => createChatSession(SIMULATION_SYSTEM_PROMPT));
@@ -234,6 +302,69 @@ const SimulationPage = ({ onComplete }: { onComplete: (transcript: Message[]) =>
                 isLoading={isLoading}
                 placeholder={isFinished ? "Simulation ended." : "Your response..."}
                 initialMessage={{role: 'model', parts: "Who are you? What do you want?"}}
+             />
+             {(isFinished || history.length >= 10) && (
+                 <div className="mt-4 text-center">
+                    <button 
+                        onClick={() => onComplete(history)}
+                        className="px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                        Finish & Begin Self-Assessment
+                    </button>
+                 </div>
+             )}
+        </div>
+    );
+};
+
+const SimulationPageWithScenario = ({ scenario, onComplete }: { scenario: typeof SIMULATION_SCENARIOS[0], onComplete: (transcript: Message[]) => void }) => {
+    const [chatSession] = useState(() => createSimulationChatSession(scenario.id));
+    const [history, setHistory] = useState<Message[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isFinished, setIsFinished] = useState(false);
+
+    const handleSendMessage = useCallback(async (message: string) => {
+        setIsLoading(true);
+        const userMessage: Message = { role: 'user', parts: message };
+        setHistory(prev => [...prev, userMessage]);
+
+        try {
+            let fullResponse = '';
+            const stream = await chatSession.sendMessageStream({ message });
+            for await (const chunk of stream) {
+                fullResponse += chunk.text;
+            }
+            const modelMessage: Message = { role: 'model', parts: fullResponse };
+            setHistory(prev => [...prev, modelMessage]);
+            if (fullResponse.toLowerCase().includes("have to go") || fullResponse.toLowerCase().includes("that's all i have time for")) {
+                setIsFinished(true);
+            }
+        } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : 'An unknown error occurred.';
+            setHistory(prev => [...prev, { role: 'model', parts: `Sorry, an error occurred: ${errorMsg}` }]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [chatSession]);
+
+    const simulationGreeting = {
+        role: 'model' as const,
+        parts: "Can I help you?"
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto h-[calc(100vh-12rem)]">
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="font-semibold text-blue-800 mb-2">Scenario: {scenario.title}</h3>
+                <p className="text-blue-700 text-sm">{scenario.summary}</p>
+            </div>
+             <ChatInterface
+                chatTitle={`Simulation: ${scenario.title}`}
+                history={history}
+                onSendMessage={handleSendMessage}
+                isLoading={isLoading}
+                placeholder={isFinished ? "Simulation ended." : "Your response..."}
+                initialMessage={simulationGreeting}
              />
              {(isFinished || history.length >= 10) && (
                  <div className="mt-4 text-center">
@@ -383,7 +514,7 @@ const ReviewPage = ({
 };
 
 const GeneralQAPage = () => {
-    const [chatSession] = useState<Chat>(() => createChatSession(GENERAL_QA_SYSTEM_PROMPT));
+    const [chatSession] = useState(() => createMentorshipChatSession(GENERAL_QA_SYSTEM_PROMPT));
     const [history, setHistory] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -405,14 +536,20 @@ const GeneralQAPage = () => {
         }
     }, [chatSession]);
 
+    const mentorshipGreeting = {
+        role: 'model' as const,
+        parts: "Hey there! It's great to connect. I'm an AI assistant, and I'm here to offer some insights, support, or just be a sounding board as you navigate your studies and journey into the field. What's on your mind today? Are you grappling with a particular class, a situation in your practicum, or just thinking about what's next?"
+    };
+
     return (
         <div className="max-w-4xl mx-auto h-[calc(100vh-12rem)]">
             <ChatInterface
-                chatTitle="Curriculum Q&A"
+                chatTitle="PSU Social Work Mentorship"
                 history={history}
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
-                placeholder="Ask a question about the curriculum..."
+                placeholder="Ask a question about the curriculum, field practice, or social work..."
+                initialMessage={mentorshipGreeting}
             />
         </div>
     );
@@ -690,6 +827,7 @@ Examples:
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'caseworker' | 'supervisor'>('caseworker');
+  const [selectedScenario, setSelectedScenario] = useState<typeof SIMULATION_SCENARIOS[0] | null>(null);
   const [state, setState] = useState<AppState>({
     page: 'home',
     isLoading: false,
@@ -733,6 +871,11 @@ const App: React.FC = () => {
       setState(s => ({ ...s, simulationTranscript: transcript }));
   };
   
+  const handleScenarioSelect = (scenario: typeof SIMULATION_SCENARIOS[0]) => {
+    setSelectedScenario(scenario);
+    handleSetPage('simulation');
+  };
+
   const renderPage = () => {
     // Supervisor view shows different content
     if (currentView === 'supervisor') {
@@ -741,8 +884,10 @@ const App: React.FC = () => {
     
     // Caseworker view (default)
     switch (state.page) {
+      case 'scenario-selection':
+        return <ScenarioSelectionPage onScenarioSelect={handleScenarioSelect} />;
       case 'simulation':
-        return <SimulationPage onComplete={handleSimulationComplete} />;
+        return selectedScenario ? <SimulationPageWithScenario scenario={selectedScenario} onComplete={handleSimulationComplete} /> : <SimulationPage onComplete={handleSimulationComplete} />;
       case 'review':
         return <ReviewPage simulationTranscript={state.simulationTranscript} onComplete={handleReviewComplete} />;
       case 'qa':

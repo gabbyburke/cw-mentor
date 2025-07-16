@@ -1,6 +1,6 @@
 import type { Chat } from '@google/genai';
 
-export type Page = 'home' | 'simulation' | 'review' | 'qa';
+export type Page = 'home' | 'scenario-selection' | 'simulation' | 'review' | 'qa';
 
 export interface Message {
   role: 'user' | 'model';
