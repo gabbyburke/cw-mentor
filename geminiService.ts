@@ -7,9 +7,10 @@ import {
   SUPERVISOR_ANALYSIS_SCHEMA
 } from './constants';
 
-if (!import.meta.env.VITE_CLOUD_FUNCTION_URL) {
-  throw new Error("CLOUD_FUNCTION_URL environment variable not set.");
-}
+// Temporarily commented out for local development
+// if (!import.meta.env.VITE_CLOUD_FUNCTION_URL) {
+//   throw new Error("CLOUD_FUNCTION_URL environment variable not set.");
+// }
 
 // Cloud Function configuration
 const CLOUD_FUNCTION_URL = import.meta.env.VITE_CLOUD_FUNCTION_URL || 'https://your-cloud-function-url';
