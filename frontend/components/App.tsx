@@ -3,7 +3,7 @@ import type { AppState, Message, Page, SelfAssessment, CaseworkerAnalysis, Super
 import { createChatSession, createMentorshipChatSession, createSimulationChatSession, analyzeCaseworkerPerformance, analyzeSupervisorCoaching } from '../services/geminiService';
 import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS } from '../utils/constants';
 import { 
-    HomeIcon, BotIcon, UserIcon, SendIcon, SparklesIcon, ClipboardIcon, 
+    BotIcon, UserIcon, SendIcon, SparklesIcon, ClipboardIcon, 
     CheckCircleIcon, LightbulbIcon, ChatBubbleLeftRightIcon, QuestionMarkCircleIcon 
 } from '../utils/icons';
 import SplashScreen from './SplashScreen';
@@ -12,29 +12,16 @@ import SplashScreen from './SplashScreen';
 //region --- UI Components ---
 
 const Header = ({ 
-    onHomeClick, 
-    showHomeButton, 
     currentView, 
     onViewChange,
     onTitleClick
 }: { 
-    onHomeClick: () => void, 
-    showHomeButton: boolean,
     currentView: 'caseworker' | 'supervisor',
     onViewChange: (view: 'caseworker' | 'supervisor') => void,
     onTitleClick: () => void
 }) => {
     return (
         <header className="text-center relative" style={{marginBottom: 0}}>
-            {showHomeButton && (
-                <button 
-                    onClick={onHomeClick} 
-                    className="btn-secondary absolute top-0 left-0 -translate-y-1/2 rounded-full p-3"
-                    aria-label="Back to Home"
-                >
-                    <HomeIcon className="w-6 h-6" />
-                </button>
-            )}
             <h1 className="h1 cursor-pointer" onClick={onTitleClick}>
               <span>Social Work</span> <span style={{color: 'var(--primary)'}}>Coaching Simulator</span>
             </h1>
@@ -848,8 +835,6 @@ export default function App() {
     return (
         <div className={`container ${contentVisible ? 'fade-in' : ''}`}>
             <Header 
-                onHomeClick={handleGoHome}
-                showHomeButton={appState.page !== 'home'}
                 currentView={appState.currentView}
                 onViewChange={handleViewChange}
                 onTitleClick={handleGoHome}
