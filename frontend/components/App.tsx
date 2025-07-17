@@ -109,7 +109,7 @@ const AboutCurriculumLink = () => {
                             left: '50%',
                             transform: 'translateX(-50%)',
                             marginTop: 'var(--unit-2)',
-                            width: '500px',
+                            width: '896px',
                             maxWidth: '90vw',
                             maxHeight: '70vh',
                             backgroundColor: 'var(--surface)',
@@ -794,9 +794,18 @@ export default function App() {
     });
     const [selectedScenario, setSelectedScenario] = useState<typeof SIMULATION_SCENARIOS[0] | null>(null);
     const [simulationTranscript, setSimulationTranscript] = useState<Message[]>([]);
+    const [contentVisible, setContentVisible] = useState(false);
 
-    const handleSplashComplete = () => {
-        setAppState(prev => ({ ...prev, showSplash: false }));
+    const handleSplashComplete = (persona: 'caseworker' | 'supervisor') => {
+        setAppState(prev => ({ 
+            ...prev, 
+            showSplash: false,
+            currentView: persona 
+        }));
+        // Add a small delay before showing content for smooth transition
+        setTimeout(() => {
+            setContentVisible(true);
+        }, 100);
     };
 
     const handlePageChange = (page: Page) => {
@@ -837,7 +846,7 @@ export default function App() {
     }
 
     return (
-        <div className="container">
+        <div className={`container ${contentVisible ? 'fade-in' : ''}`}>
             <Header 
                 onHomeClick={handleGoHome}
                 showHomeButton={appState.page !== 'home'}

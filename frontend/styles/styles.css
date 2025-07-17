@@ -682,6 +682,16 @@ select[multiple] option {
   padding: var(--unit-4) var(--unit-6) var(--unit-8);
 }
 
+.container {
+  opacity: 0;
+  transition: opacity 0.8s ease-out;
+}
+
+.container.fade-in {
+  opacity: 1;
+  animation: fadeIn 0.8s ease-out;
+}
+
 .card {
   background-color: var(--surface);
   border: 1px solid var(--outline-variant);
