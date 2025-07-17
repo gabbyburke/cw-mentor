@@ -280,6 +280,30 @@ const HomePage = ({ onSelectPage }: { onSelectPage: (page: Page) => void }) => (
 
 const ScenarioSelectionPage = ({ onScenarioSelect }: { onScenarioSelect: (scenario: typeof SIMULATION_SCENARIOS[0]) => void }) => {
     const [selectedScenario, setSelectedScenario] = useState<typeof SIMULATION_SCENARIOS[0] | null>(null);
+    const scenariosRef = useRef<HTMLDivElement>(null);
+    const caseSummaryRef = useRef<HTMLDivElement>(null);
+
+    // Autoscroll to scenarios when page loads
+    useEffect(() => {
+        setTimeout(() => {
+            scenariosRef.current?.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }, 100); // Small delay to ensure DOM is ready
+    }, []);
+
+    // Autoscroll to case summary when a scenario is selected
+    useEffect(() => {
+        if (selectedScenario) {
+            setTimeout(() => {
+                caseSummaryRef.current?.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 100); // Small delay to ensure DOM updates
+        }
+    }, [selectedScenario]);
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -291,7 +315,7 @@ const ScenarioSelectionPage = ({ onScenarioSelect }: { onScenarioSelect: (scenar
             </div>
 
             <div className="space-y-6">
-                <div className="card">
+                <div className="card" ref={scenariosRef}>
                     <h3 className="h4 mb-4">Available Scenarios</h3>
                     <div className="space-y-3">
                         {SIMULATION_SCENARIOS.map((scenario) => (
@@ -328,7 +352,7 @@ const ScenarioSelectionPage = ({ onScenarioSelect }: { onScenarioSelect: (scenar
                 </div>
 
                 {selectedScenario && (
-                    <div className="card">
+                    <div className="card" ref={caseSummaryRef}>
                         <h3 className="h4 mb-4">Case Summary: {selectedScenario.title}</h3>
                         <p style={{color: 'var(--on-surface-variant)', fontSize: '0.875rem', lineHeight: '1.6', marginBottom: 'var(--unit-4)'}}>
                             {selectedScenario.summary}
