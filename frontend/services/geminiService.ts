@@ -13,7 +13,7 @@ import {
 // }
 
 // Cloud Function configuration
-const CLOUD_FUNCTION_URL = import.meta.env.VITE_CLOUD_FUNCTION_URL || 'https://cw-mentor-scenario-807576987550.us-central1.run.app';
+const CLOUD_FUNCTION_URL = import.meta.env.VITE_CLOUD_FUNCTION_URL || 'https://us-central1-wz-case-worker-mentor.cloudfunctions.net/analysis-function';
 const MENTORSHIP_FUNCTION_URL = import.meta.env.VITE_MENTORSHIP_FUNCTION_URL || 'https://psu-mentor-demo-807576987550.us-central1.run.app';
 const SIMULATION_FUNCTION_URL = import.meta.env.VITE_SIMULATION_FUNCTION_URL || 'https://psu-simulation-807576987550.us-central1.run.app';
 

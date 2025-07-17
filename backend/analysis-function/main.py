@@ -1,8 +1,7 @@
 import functions_framework
 from flask import jsonify
-from google.cloud import aiplatform
-import vertexai
-from vertexai.generative_models import GenerativeModel, GenerationConfig, SafetySetting, HarmCategory
+from google import genai
+from google.genai import types
 import os
 import json
 import logging
@@ -10,18 +9,32 @@ import logging
 # --- Initialize Logging ---
 logging.basicConfig(level=logging.INFO)
 
-# --- Initialize Vertex AI ---
+# --- Initialize Google GenAI ---
 try:
-    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
-    region = "us-central1"  # Force us-central1 which is supported
+    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "wz-case-worker-mentor")
     if not project_id:
         logging.warning("GOOGLE_CLOUD_PROJECT environment variable not set.")
-    vertexai.init(project=project_id, location=region)
-    logging.info(f"Vertex AI initialized for project '{project_id}' in location '{region}'")
+    
+    # Initialize the client
+    client = genai.Client(
+        vertexai=True,
+        project=project_id,
+        location="global",  # Using global for Discovery Engine
+    )
+    logging.info(f"Google GenAI initialized for project '{project_id}'")
 except Exception as e:
-    logging.error(f"CRITICAL: Error initializing Vertex AI: {e}", exc_info=True)
+    logging.error(f"CRITICAL: Error initializing Google GenAI: {e}", exc_info=True)
 
 MODEL_NAME = "gemini-2.5-flash"
+
+# Configure RAG tool with curriculum datastore
+RAG_TOOL = types.Tool(
+    retrieval=types.Retrieval(
+        vertex_ai_search=types.VertexAISearch(
+            datastore="projects/wz-case-worker-mentor/locations/global/collections/default_collection/dataStores/curriculum_1752784944010"
+        )
+    )
+)
 
 @functions_framework.http
 def social_work_ai(request):
@@ -78,46 +91,75 @@ def handle_chat(request_json, headers):
         if not message:
             return (jsonify({'error': 'Missing message field'}), 400, headers)
 
-        # Format conversation history
-        history_text = '\n'.join([f"{msg.get('role', 'unknown')}: {msg.get('parts', '')}" for msg in history])
+        # Build contents with system instruction and history
+        contents = []
         
-        full_prompt = f"{system_instruction}\n\nConversation history:\n{history_text}\n\nUser: {message}"
+        # Add system instruction as first message if provided
+        if system_instruction:
+            contents.append(types.Content(
+                role="user",
+                parts=[types.Part(text=system_instruction)]
+            ))
+            contents.append(types.Content(
+                role="model",
+                parts=[types.Part(text="I understand. I'll follow these instructions.")]
+            ))
         
-        model = GenerativeModel(MODEL_NAME)
+        # Add conversation history
+        for msg in history:
+            role = "user" if msg.get('role') == 'user' else "model"
+            parts_text = msg.get('parts', '')
+            if parts_text:
+                contents.append(types.Content(
+                    role=role,
+                    parts=[types.Part(text=parts_text)]
+                ))
         
-        generation_config = GenerationConfig(
+        # Add current message
+        contents.append(types.Content(
+            role="user",
+            parts=[types.Part(text=message)]
+        ))
+        
+        # Configure generation with RAG grounding
+        config = types.GenerateContentConfig(
             temperature=0.7,
             max_output_tokens=1024,
+            safety_settings=[
+                types.SafetySetting(
+                    category="HARM_CATEGORY_HARASSMENT",
+                    threshold="BLOCK_ONLY_HIGH"
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_HATE_SPEECH",
+                    threshold="BLOCK_ONLY_HIGH"
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    threshold="BLOCK_MEDIUM_AND_ABOVE"
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_DANGEROUS_CONTENT",
+                    threshold="BLOCK_ONLY_HIGH"
+                )
+            ],
+            tools=[RAG_TOOL]  # Enable RAG grounding
         )
         
-        # Balanced safety settings for educational child welfare content
-        safety_settings = [
-            SafetySetting(
-                category=HarmCategory.HARM_CATEGORY_HARASSMENT,
-                threshold=SafetySetting.HarmBlockThreshold.BLOCK_ONLY_HIGH
-            ),
-            SafetySetting(
-                category=HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                threshold=SafetySetting.HarmBlockThreshold.BLOCK_ONLY_HIGH
-            ),
-            SafetySetting(
-                category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
-            ),
-            SafetySetting(
-                category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                threshold=SafetySetting.HarmBlockThreshold.BLOCK_ONLY_HIGH
-            )
-        ]
-        
-        response = model.generate_content(
-            full_prompt,
-            generation_config=generation_config,
-            safety_settings=safety_settings
+        # Generate response
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=contents,
+            config=config
         )
+        
+        # Extract text from response
+        response_text = ""
+        if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+            response_text = response.candidates[0].content.parts[0].text
         
         logging.info("Chat response generated successfully")
-        return (jsonify({'text': response.text, 'success': True}), 200, headers)
+        return (jsonify({'text': response_text, 'success': True}), 200, headers)
         
     except Exception as e:
         logging.exception(f"Error in handle_chat: {str(e)}")
@@ -136,8 +178,12 @@ def handle_analysis(request_json, headers):
         # Format transcript
         transcript_text = '\n'.join([f"{msg.get('role', 'unknown')}: {msg.get('parts', '')}" for msg in transcript])
         
-        # Create a much shorter, focused prompt to avoid token limits
-        short_prompt = f"""
+        # Create analysis prompt
+        analysis_prompt = f"""
+You are an expert social work educator analyzing a parent interview transcript. Use the Arkansas child welfare training materials and best practices to provide feedback.
+
+IMPORTANT: When using information from the training materials, include citation markers [1], [2], etc. in your response text where you reference specific curriculum content.
+
 Analyze this social work parent interview transcript against these key criteria:
 1. Introduction & Identification - Did worker properly introduce themselves and verify parent identity?
 2. Reason for Contact - Did worker clearly explain why they're there?
@@ -151,6 +197,8 @@ Transcript:
 
 Self-Assessment:
 {json.dumps(assessment, indent=2)}
+
+Provide constructive, encouraging feedback grounded in the training materials. Focus on specific behaviors and actionable improvements.
 
 Respond with JSON in this exact format:
 {{
@@ -171,48 +219,85 @@ Respond with JSON in this exact format:
 }}
 """
         
-        model = GenerativeModel(MODEL_NAME)
+        # Build content for analysis
+        contents = [types.Content(
+            role="user",
+            parts=[types.Part(text=analysis_prompt)]
+        )]
         
-        generation_config = GenerationConfig(
-            response_mime_type="application/json",
+        # Configure generation with RAG grounding and JSON output
+        config = types.GenerateContentConfig(
             temperature=0.3,
             max_output_tokens=4096,
+            response_mime_type="application/json",
+            safety_settings=[
+                types.SafetySetting(
+                    category="HARM_CATEGORY_HARASSMENT",
+                    threshold="BLOCK_ONLY_HIGH"
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_HATE_SPEECH",
+                    threshold="BLOCK_ONLY_HIGH"
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    threshold="BLOCK_MEDIUM_AND_ABOVE"
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_DANGEROUS_CONTENT",
+                    threshold="BLOCK_ONLY_HIGH"
+                )
+            ],
+            tools=[RAG_TOOL]  # Enable RAG grounding for curriculum-based analysis
         )
         
-        # Balanced safety settings for educational child welfare content
-        safety_settings = [
-            SafetySetting(
-                category=HarmCategory.HARM_CATEGORY_HARASSMENT,
-                threshold=SafetySetting.HarmBlockThreshold.BLOCK_ONLY_HIGH
-            ),
-            SafetySetting(
-                category=HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                threshold=SafetySetting.HarmBlockThreshold.BLOCK_ONLY_HIGH
-            ),
-            SafetySetting(
-                category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-                threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
-            ),
-            SafetySetting(
-                category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                threshold=SafetySetting.HarmBlockThreshold.BLOCK_ONLY_HIGH
-            )
-        ]
-        
-        response = model.generate_content(
-            short_prompt,
-            generation_config=generation_config,
-            safety_settings=safety_settings
+        # Generate analysis
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=contents,
+            config=config
         )
         
-        # Parse JSON response
+        # Parse JSON response and extract citations
         try:
-            analysis = json.loads(response.text)
-            logging.info("Analysis generated successfully")
+            response_text = ""
+            if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
+                response_text = response.candidates[0].content.parts[0].text
+            
+            analysis = json.loads(response_text)
+            
+            # Extract grounding metadata for citations
+            citations = []
+            if (response.candidates and 
+                response.candidates[0].grounding_metadata and 
+                response.candidates[0].grounding_metadata.grounding_chunks):
+                
+                for idx, chunk in enumerate(response.candidates[0].grounding_metadata.grounding_chunks):
+                    citation = {
+                        "number": idx + 1,
+                        "source": chunk.retrieved_context.title if chunk.retrieved_context and chunk.retrieved_context.title else "Training Material",
+                        "text": chunk.retrieved_context.text if chunk.retrieved_context and chunk.retrieved_context.text else "",
+                        "uri": chunk.retrieved_context.uri if chunk.retrieved_context and chunk.retrieved_context.uri else ""
+                    }
+                    
+                    # Extract page span if available
+                    if chunk.retrieved_context and hasattr(chunk.retrieved_context, 'rag_chunk') and chunk.retrieved_context.rag_chunk:
+                        rag_chunk = chunk.retrieved_context.rag_chunk
+                        if hasattr(rag_chunk, 'page_span') and rag_chunk.page_span:
+                            citation["pages"] = f"Pages {rag_chunk.page_span.first_page}-{rag_chunk.page_span.last_page}"
+                    
+                    citations.append(citation)
+                
+                logging.info(f"Extracted {len(citations)} citations from grounding metadata")
+            
+            # Add citations to the analysis response
+            analysis["citations"] = citations
+            
+            logging.info("Analysis generated successfully with citations")
             return (jsonify(analysis), 200, headers)
         except json.JSONDecodeError as json_err:
             logging.error(f"Failed to decode JSON response: {json_err}")
-            logging.error(f"AI Response Text: {response.text}")
+            logging.error(f"AI Response Text: {response_text}")
             # Return a fallback structure if JSON parsing fails
             fallback_analysis = {
                 "overallSummary": "Analysis completed but response format needs adjustment.",

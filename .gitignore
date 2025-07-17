@@ -1,3 +1,5 @@
+backend/rag/materials
+
 # Environment variables (contains API keys)
 .env
 .env.local
