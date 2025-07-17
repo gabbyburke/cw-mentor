@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { AppState, Message, Page, SelfAssessment, CaseworkerAnalysis, SupervisorAnalysis } from '../types/types';
 import { createChatSession, createMentorshipChatSession, createSimulationChatSession, analyzeCaseworkerPerformance, analyzeSupervisorCoaching } from '../services/geminiService';
-import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS } from '../utils/constants';
+import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS, SIMULATION_PREFILL_TRANSCRIPTS } from '../utils/constants';
 import { 
     BotIcon, UserIcon, SendIcon, SparklesIcon, ClipboardIcon, 
-    CheckCircleIcon, LightbulbIcon, ChatBubbleLeftRightIcon, QuestionMarkCircleIcon 
+    CheckCircleIcon, LightbulbIcon, ChatBubbleLeftRightIcon, QuestionMarkCircleIcon,
+    MagicWandIcon
 } from '../utils/icons';
 import SplashScreen from './SplashScreen';
 
@@ -166,6 +167,8 @@ const ChatInterface = ({
   placeholder = "Send a message...",
   chatTitle,
   initialMessage,
+  onPrefillExample,
+  showPrefillButton = false,
 }: {
   history: Message[];
   onSendMessage: (message: string) => void;
@@ -173,6 +176,8 @@ const ChatInterface = ({
   placeholder?: string;
   chatTitle: string;
   initialMessage?: Message;
+  onPrefillExample?: () => void;
+  showPrefillButton?: boolean;
 }) => {
   const [newMessage, setNewMessage] = useState('');
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -197,7 +202,22 @@ const ChatInterface = ({
   const allMessages = initialMessage ? [initialMessage, ...history] : history;
 
   return (
-    <div className="chat-container">
+    <div className="chat-container" style={{ position: 'relative' }}>
+      {showPrefillButton && onPrefillExample && (
+        <button
+          onClick={onPrefillExample}
+          className="glossy-chip-surface"
+          style={{
+            position: 'absolute',
+            top: 'var(--unit-6)',
+            right: 'var(--unit-6)',
+            zIndex: 10
+          }}
+        >
+          <MagicWandIcon className="w-4 h-4" />
+          <span>Prefill Example</span>
+        </button>
+      )}
       <h2 className="h4 mb-4">{chatTitle}</h2>
       <div className="flex-grow overflow-y-auto pr-2 space-y-4">
         {allMessages.map((msg, index) => (
@@ -236,7 +256,7 @@ const ChatInterface = ({
         <button
           onClick={handleSend}
           disabled={isLoading || !newMessage}
-          className="btn-primary p-3"
+          className="btn-send"
           aria-label="Send message"
         >
           <SendIcon className="w-6 h-6" />
@@ -429,6 +449,7 @@ const SimulationPageWithScenario = ({ scenario, onComplete }: { scenario: typeof
     const [history, setHistory] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
+    const [hasPrefilled, setHasPrefilled] = useState(false);
 
     const handleSendMessage = useCallback(async (message: string) => {
         setIsLoading(true);
@@ -454,6 +475,22 @@ const SimulationPageWithScenario = ({ scenario, onComplete }: { scenario: typeof
         }
     }, [chatSession]);
 
+    const handlePrefillExample = useCallback(() => {
+        // Get available transcripts for this scenario
+        const scenarioTranscripts = SIMULATION_PREFILL_TRANSCRIPTS[scenario.id as keyof typeof SIMULATION_PREFILL_TRANSCRIPTS];
+        if (!scenarioTranscripts || scenarioTranscripts.length === 0) return;
+
+        // Select a random transcript
+        const randomTranscript = scenarioTranscripts[Math.floor(Math.random() * scenarioTranscripts.length)];
+        
+        // Set the history to the prefilled messages (excluding the initial greeting)
+        setHistory(randomTranscript.messages);
+        setHasPrefilled(true);
+        
+        // Mark as finished since these are complete examples
+        setIsFinished(true);
+    }, [scenario.id]);
+
     const simulationGreeting = {
         role: 'model' as const,
         parts: "Can I help you?"
@@ -472,6 +509,8 @@ const SimulationPageWithScenario = ({ scenario, onComplete }: { scenario: typeof
                 isLoading={isLoading}
                 placeholder={isFinished ? "Simulation ended." : "Your response..."}
                 initialMessage={simulationGreeting}
+                onPrefillExample={handlePrefillExample}
+                showPrefillButton={!hasPrefilled && history.length === 0}
              />
              {(isFinished || history.length >= 10) && (
                  <div className="mt-4 text-center">

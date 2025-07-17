@@ -58,3 +58,7 @@ export const QuestionMarkCircleIcon = ({ className, style }: { className?: strin
 export const ArrowRightIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <GoogleIcon name="arrow_forward" className={className} style={style} />
 );
+
+export const MagicWandIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="auto_fix_high" className={className} style={style} />
+);

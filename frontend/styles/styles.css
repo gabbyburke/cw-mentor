@@ -801,24 +801,30 @@ select[multiple] option {
 .chat-input-container {
   margin-top: var(--unit-4);
   padding-top: var(--unit-4);
-  border-top: 1px solid var(--outline-variant);
   display: flex;
   align-items: center;
-  gap: var(--unit-3);
+  gap: var(--unit-2);
 }
 
 .chat-input {
   flex: 1;
-  padding: var(--unit-3);
-  border: 1px solid var(--outline);
-  border-radius: var(--unit-2);
+  padding: var(--unit-3) var(--unit-4);
+  border: none;
+  background-color: var(--surface-container-low);
+  border-radius: 24px;
   font-size: 0.875rem;
   transition: all 0.3s ease;
+  outline: none;
 }
 
 .chat-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(11, 87, 208, 0.2);
+  background-color: var(--surface-container);
+  box-shadow: 0 0 0 2px rgba(11, 87, 208, 0.1);
+}
+
+.chat-input::placeholder {
+  color: var(--on-surface-variant);
+  opacity: 0.6;
 }
 
 .loading-indicator {
@@ -1443,4 +1449,121 @@ select[multiple] option {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+}
+
+/* Glossy Chip Button (from md-commerce-portal) */
+.glossy-chip {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: var(--unit-3) var(--unit-4);
+  border-radius: 20px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--unit-2);
+  text-align: left;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  font-weight: 500;
+}
+
+.glossy-chip::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.glossy-chip:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.glossy-chip:hover::before {
+  left: 100%;
+}
+
+/* Minimalist Send Button */
+.btn-send {
+  background: transparent;
+  border: none;
+  color: var(--primary);
+  padding: var(--unit-2);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.btn-send:hover:not(:disabled) {
+  background-color: var(--primary-container);
+  transform: scale(1.05);
+}
+
+.btn-send:disabled {
+  color: var(--on-surface-variant);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-send:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Glossy chip for light mode / surface backgrounds */
+.glossy-chip-surface {
+  background: linear-gradient(135deg, rgba(11, 87, 208, 0.08) 0%, rgba(11, 87, 208, 0.05) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(11, 87, 208, 0.2);
+  color: var(--primary);
+  padding: var(--unit-2) var(--unit-3);
+  border-radius: 20px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--unit-2);
+  text-align: left;
+  box-shadow: 0 4px 16px rgba(11, 87, 208, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  position: relative;
+  overflow: hidden;
+  font-weight: 500;
+}
+
+.glossy-chip-surface::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(11, 87, 208, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.glossy-chip-surface:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: linear-gradient(135deg, rgba(11, 87, 208, 0.12) 0%, rgba(11, 87, 208, 0.08) 100%);
+  box-shadow: 0 8px 24px rgba(11, 87, 208, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.glossy-chip-surface:hover::before {
+  left: 100%;
 }
