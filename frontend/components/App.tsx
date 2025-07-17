@@ -1,12 +1,12 @@
 
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import type { AppState, Message, Page, SelfAssessment, CaseworkerAnalysis, SupervisorAnalysis } from './types';
-import { createChatSession, createMentorshipChatSession, createSimulationChatSession, analyzeCaseworkerPerformance, analyzeSupervisorCoaching } from './geminiService.ts';
-import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS } from './constants';
+import type { AppState, Message, Page, SelfAssessment, CaseworkerAnalysis, SupervisorAnalysis } from '../types/types';
+import { createChatSession, createMentorshipChatSession, createSimulationChatSession, analyzeCaseworkerPerformance, analyzeSupervisorCoaching } from '../services/geminiService';
+import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS } from '../utils/constants';
 import { 
     HomeIcon, BotIcon, UserIcon, SendIcon, SparklesIcon, ClipboardIcon, 
     CheckCircleIcon, LightbulbIcon, ChatBubbleLeftRightIcon, QuestionMarkCircleIcon 
-} from './icons';
+} from '../utils/icons';
 import type { Chat } from '@google/genai';
 
 
@@ -36,7 +36,7 @@ const Header = ({
             </button>
         )}
         <h1 className="h1 cursor-pointer" onClick={onTitleClick}>
-          Social Work <span style={{color: 'var(--primary)'}}>Coaching Simulator</span>
+          <span>Social Work</span> <span style={{color: 'var(--primary)'}}>Coaching Simulator</span>
         </h1>
         <div className="flex justify-center gap-2 mt-4">
             <button 
