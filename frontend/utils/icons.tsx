@@ -1,56 +1,56 @@
 import React from 'react';
 
 // Google Symbol Icon Component
-const GoogleIcon = ({ name, className }: { name: string; className?: string }) => (
-  <span className={`icon ${className || ''}`} style={{ fontFamily: 'Google Symbols' }}>
+const GoogleIcon = ({ name, className, style }: { name: string; className?: string; style?: React.CSSProperties }) => (
+  <span className={`icon ${className || ''}`} style={{ fontFamily: 'Google Symbols', ...style }}>
     {name}
   </span>
 );
 
-export const UploadIcon = ({ className }: { className?: string }) => (
-  <GoogleIcon name="upload" className={className} />
+export const UploadIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="upload" className={className} style={style} />
 );
 
-export const CheckCircleIcon = ({ className }: { className?: string }) => (
-  <GoogleIcon name="check_circle" className={className} />
+export const CheckCircleIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="check_circle" className={className} style={style} />
 );
 
-export const LightbulbIcon = ({ className }: { className?: string }) => (
-  <GoogleIcon name="lightbulb" className={className} />
+export const LightbulbIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="lightbulb" className={className} style={style} />
 );
 
-export const SendIcon = ({ className }: { className?: string }) => (
-  <GoogleIcon name="send" className={className} />
+export const SendIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="send" className={className} style={style} />
 );
 
-export const SparklesIcon = ({ className }: { className?: string }) => (
-  <GoogleIcon name="auto_awesome" className={className} />
+export const SparklesIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="auto_awesome" className={className} style={style} />
 );
 
-export const UserIcon = ({ className }: { className?: string }) => (
-  <GoogleIcon name="person" className={className} />
+export const UserIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="person" className={className} style={style} />
 );
 
-export const BotIcon = ({ className }: { className?: string }) => (
-  <GoogleIcon name="smart_toy" className={className} />
+export const BotIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="smart_toy" className={className} style={style} />
 );
 
-export const ClipboardIcon = ({ className }: { className?: string }) => (
-  <GoogleIcon name="assignment" className={className} />
+export const ClipboardIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="assignment" className={className} style={style} />
 );
 
 export const LoadingSpinner = () => (
   <div className="loading-spinner"></div>
 );
 
-export const HomeIcon = ({ className }: { className?: string }) => (
-  <GoogleIcon name="home" className={className} />
+export const HomeIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="home" className={className} style={style} />
 );
 
-export const ChatBubbleLeftRightIcon = ({ className }: { className?: string }) => (
-  <GoogleIcon name="chat" className={className} />
+export const ChatBubbleLeftRightIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="chat" className={className} style={style} />
 );
 
-export const QuestionMarkCircleIcon = ({ className }: { className?: string }) => (
-  <GoogleIcon name="help" className={className} />
+export const QuestionMarkCircleIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="help" className={className} style={style} />
 );

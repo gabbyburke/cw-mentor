@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { SparklesIcon, LoadingSpinner } from './icons';
+import { SparklesIcon, LoadingSpinner } from '../utils/icons';
 
 interface TranscriptInputProps {
   onAnalyze: (transcript: string) => void;

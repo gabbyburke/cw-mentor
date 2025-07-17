@@ -1,11 +1,11 @@
 
-import type { CaseworkerAnalysis, SelfAssessment, SupervisorAnalysis, Message } from './types';
+import type { CaseworkerAnalysis, SelfAssessment, SupervisorAnalysis, Message } from '../types/types';
 import { 
   CASEWORKER_ANALYSIS_PROMPT, 
   CASEWORKER_ANALYSIS_SCHEMA,
   SUPERVISOR_ANALYSIS_PROMPT,
   SUPERVISOR_ANALYSIS_SCHEMA
-} from './constants';
+} from '../utils/constants';
 
 // Temporarily commented out for local development
 // if (!import.meta.env.VITE_CLOUD_FUNCTION_URL) {

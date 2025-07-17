@@ -1,7 +1,7 @@
 
 import React from 'react';
-import type { CaseworkerAnalysis } from '../types';
-import { CheckCircleIcon, LightbulbIcon, SparklesIcon } from './icons';
+import type { CaseworkerAnalysis } from '../types/types';
+import { CheckCircleIcon, LightbulbIcon, SparklesIcon } from '../utils/icons';
 
 interface AnalysisDisplayProps {
   analysis: CaseworkerAnalysis;

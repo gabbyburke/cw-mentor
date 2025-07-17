@@ -7,7 +7,6 @@ import {
     HomeIcon, BotIcon, UserIcon, SendIcon, SparklesIcon, ClipboardIcon, 
     CheckCircleIcon, LightbulbIcon, ChatBubbleLeftRightIcon, QuestionMarkCircleIcon 
 } from '../utils/icons';
-import type { Chat } from '@google/genai';
 
 
 //region --- UI Components ---
@@ -264,7 +263,7 @@ const ScenarioSelectionPage = ({ onScenarioSelect }: { onScenarioSelect: (scenar
 };
 
 const SimulationPage = ({ onComplete }: { onComplete: (transcript: Message[]) => void }) => {
-    const [chatSession] = useState<Chat>(() => createChatSession(SIMULATION_SYSTEM_PROMPT));
+    const [chatSession] = useState(() => createChatSession(SIMULATION_SYSTEM_PROMPT));
     const [history, setHistory] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isFinished, setIsFinished] = useState(false);

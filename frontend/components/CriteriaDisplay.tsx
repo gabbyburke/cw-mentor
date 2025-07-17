@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { ASSESSMENT_CRITERIA } from '../constants';
-import { ClipboardIcon } from './icons';
+import { ASSESSMENT_CRITERIA } from '../utils/constants';
+import { ClipboardIcon } from '../utils/icons';
 
 const CriteriaDisplay: React.FC = () => {
   return (
