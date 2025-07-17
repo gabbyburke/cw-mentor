@@ -7,13 +7,23 @@ interface SplashScreenProps {
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const [showOptions, setShowOptions] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const handleGetStarted = () => {
-    setShowOptions(true);
+    setIsTransitioning(true);
+    // Wait for fade out animation
+    setTimeout(() => {
+      setShowOptions(true);
+      setIsTransitioning(false);
+    }, 500);
   };
 
   const handlePersonaSelect = (persona: 'caseworker' | 'supervisor') => {
-    onComplete(persona);
+    setIsTransitioning(true);
+    // Wait for fade out before completing
+    setTimeout(() => {
+      onComplete(persona);
+    }, 500);
   };
 
   return (
@@ -28,7 +38,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       {/* Content */}
       <div className="splash-content">
         {!showOptions ? (
-          <div className="welcome-container fade-in">
+          <div className={`welcome-container ${isTransitioning ? 'fade-out' : 'fade-in'}`}>
             <div className="icon-container">
               <SparklesIcon className="splash-icon" />
             </div>
@@ -48,7 +58,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
             </button>
           </div>
         ) : (
-          <div className="options-preview fade-in">
+          <div className={`options-preview ${isTransitioning ? 'fade-out' : 'fade-in'}`}>
             <h2 className="options-title">Who are you?</h2>
             <p className="welcome-subtitle" style={{marginBottom: 'var(--unit-8)'}}>
               Select your role to personalize your experience

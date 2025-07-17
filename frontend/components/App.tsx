@@ -900,7 +900,10 @@ const App: React.FC = () => {
   };
 
   if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+    return <SplashScreen onComplete={(persona) => {
+      setCurrentView(persona);
+      setShowSplash(false);
+    }} />;
   }
 
   return (

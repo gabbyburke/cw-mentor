@@ -1349,6 +1349,10 @@ select[multiple] option {
   animation: fadeIn 0.8s ease-out;
 }
 
+.fade-out {
+  animation: fadeOut 0.5s ease-out forwards;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1358,6 +1362,36 @@ select[multiple] option {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+/* Persona Cards */
+.persona-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.persona-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.persona-icon {
+  font-size: 3rem;
+  margin-bottom: var(--unit-4);
+  color: var(--primary);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 /* Responsive Design */
