@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { AppState, Message, Page, SelfAssessment, CaseworkerAnalysis, SupervisorAnalysis } from '../types/types';
 import { createChatSession, createMentorshipChatSession, createSimulationChatSession, analyzeCaseworkerPerformance, analyzeSupervisorCoaching } from '../services/geminiService';
-import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS, SIMULATION_PREFILL_TRANSCRIPTS } from '../utils/constants';
+import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS, SIMULATION_PREFILL_TRANSCRIPTS, SELF_ASSESSMENT_EXAMPLES } from '../utils/constants';
 import { 
     BotIcon, UserIcon, SendIcon, SparklesIcon, ClipboardIcon, 
     CheckCircleIcon, LightbulbIcon, ChatBubbleLeftRightIcon, QuestionMarkCircleIcon,
@@ -542,6 +542,14 @@ const ReviewPage = ({
     const [caseworkerAnalysis, setCaseworkerAnalysis] = useState<CaseworkerAnalysis | null>(null);
     const [supervisorFeedback, setSupervisorFeedback] = useState('');
     const [supervisorAnalysis, setSupervisorAnalysis] = useState<SupervisorAnalysis | null>(null);
+    const [hasPrefilled, setHasPrefilled] = useState(false);
+
+    const handlePrefillSelfAssessment = () => {
+        // Select a random example
+        const randomExample = SELF_ASSESSMENT_EXAMPLES[Math.floor(Math.random() * SELF_ASSESSMENT_EXAMPLES.length)];
+        setSelfAssessment(randomExample.assessment);
+        setHasPrefilled(true);
+    };
 
     const handleSelfAssessmentSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -580,7 +588,23 @@ const ReviewPage = ({
         switch(stage) {
             case 'self-assessment':
                 return (
-                    <form onSubmit={handleSelfAssessmentSubmit} className="space-y-6 bg-white p-8 rounded-2xl shadow-lg border border-slate-200">
+                    <form onSubmit={handleSelfAssessmentSubmit} className="space-y-6 bg-white p-8 rounded-2xl shadow-lg border border-slate-200 relative">
+                        {!hasPrefilled && Object.keys(selfAssessment).length === 0 && (
+                            <button
+                                type="button"
+                                onClick={handlePrefillSelfAssessment}
+                                className="glossy-chip-surface"
+                                style={{
+                                    position: 'absolute',
+                                    top: 'var(--unit-6)',
+                                    right: 'var(--unit-6)',
+                                    zIndex: 10
+                                }}
+                            >
+                                <MagicWandIcon className="w-4 h-4" />
+                                <span>Prefill Example</span>
+                            </button>
+                        )}
                         <h3 className="text-2xl font-bold text-slate-800">Post-Simulation Self-Assessment</h3>
                         <p className="text-slate-600">Reflect on your performance during the simulation based on the core criteria.</p>
                         {ASSESSMENT_CRITERIA.map(c => (
@@ -591,6 +615,7 @@ const ReviewPage = ({
                                     id={c.key}
                                     rows={3}
                                     required
+                                    value={selfAssessment[c.key] || ''}
                                     className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     onChange={e => setSelfAssessment(s => ({ ...s, [c.key]: e.target.value }))}
                                 />

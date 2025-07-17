@@ -1148,3 +1148,79 @@ export const SIMULATION_SCENARIOS = [
         summary: "This case file concerns the Tasi family, specifically addressing allegations of neglect involving Tammy Tasi and her children, Efren (15) and Malia (13). The initial report stemmed from an incident where Efren allegedly assaulted Malia in their mother's presence, causing an injury to Malia's eye. Concerns were also raised about the children being left home alone."
     }
 ];
+
+// Self-assessment prefill examples of varying quality
+export const SELF_ASSESSMENT_EXAMPLES = [
+    {
+        quality: 'good',
+        description: 'Thoughtful and specific reflection',
+        assessment: {
+            introduction: "I introduced myself as Sarah Johnson from the Oregon Department of Human Services, Child Welfare division. I showed my ID and provided a business card. I confirmed the parent's identity by asking 'Are you Sara Cooper?' before proceeding. I feel I did this well, maintaining a professional yet approachable demeanor. However, I realized I could have asked if she preferred to be called Sara or Ms. Cooper to show more respect for her preferences.",
+            reasonForContact: "I clearly stated we received a report about concerns for the children's safety, specifically mentioning the report from Jasmine's school about witnessing incidents at home. I tried to use neutral language like 'concerns' instead of 'allegations' to reduce defensiveness. I emphasized that I wanted to hear her perspective. Looking back, I could have been more empathetic in my delivery - perhaps acknowledging how difficult it must be to receive this visit.",
+            responsiveToParent: "When Sara became emotional and started talking about her substance use and relationship with Shawn, I listened without judgment and validated her feelings by saying 'I hear how difficult this has been for you.' I asked follow-up questions from a place of curiosity rather than interrogation. However, I noticed I interrupted her once when she was explaining about Shawn - I need to work on allowing complete responses before asking the next question.",
+            permissionToEnter: "I asked 'May I come in so we can discuss this privately?' and waited for her explicit consent. When she invited me in, I thanked her. I also asked if anyone else was home, which helped me understand who was present. I maintained appropriate boundaries by asking where she'd like me to sit. This felt natural and respectful.",
+            gatheringInformation: "I gathered information about multiple areas: the substance use issue, domestic violence concerns, support systems (her mother), and current safety (Shawn being in jail). I asked about tribal affiliation to ensure appropriate resources. However, I realize I didn't ask enough about the children's daily routines, medical needs, or school attendance. I was so focused on the immediate allegations that I missed gathering a more complete picture of the family's functioning.",
+            processAndNextSteps: "I provided the 1536 pamphlet and briefly explained it outlined her rights and the assessment process. I told her we would need to see the children and assess their safety, and discussed potential resources and support. However, I realize I wasn't specific enough about timelines - when I would need to see the children, how long the assessment might take, or when she could expect to hear from me again. This uncertainty might increase her anxiety."
+        }
+    },
+    {
+        quality: 'mixed',
+        description: 'Some insight but lacks depth',
+        assessment: {
+            introduction: "I introduced myself with my name and said I was from Child Welfare. I showed my badge when asked. I think I did okay with this part, though maybe I could have been clearer about which department I was from.",
+            reasonForContact: "I told the parent there was a report about their child having injuries. I mentioned it came from the school. I tried not to sound too accusatory but I'm not sure if I succeeded. The parent seemed defensive so maybe my approach wasn't the best.",
+            responsiveToParent: "I listened to what the parent had to say about the incident. When they explained their version of events, I tried to show I was listening by nodding. I asked some follow-up questions. I think I did reasonably well here but could probably show more empathy.",
+            permissionToEnter: "I asked if I could come in to talk. They let me in, though they seemed reluctant. I probably should have been more reassuring about why I needed to come inside.",
+            gatheringInformation: "I asked about what happened with the injury, who lives in the home, and about their relationships. I got basic information but looking back, I didn't ask about a lot of important things like supports, other services involved, or family strengths. I was mostly focused on the incident itself.",
+            processAndNextSteps: "I gave them the pamphlet about their rights. I said we would continue to evaluate the situation. I mentioned I might need to talk to other people. I think I covered the basics but wasn't very specific about what would happen next or when."
+        }
+    },
+    {
+        quality: 'poor',
+        description: 'Vague and lacks self-awareness',
+        assessment: {
+            introduction: "I said who I was and why I was there. The parent seemed suspicious but I showed my ID. I think this went fine.",
+            reasonForContact: "I told them about the report. They got upset. Not sure what else I was supposed to do differently here.",
+            responsiveToParent: "I let them talk and explain their side. They were pretty defensive so it was hard to get information. I asked questions when I needed to.",
+            permissionToEnter: "They let me in after I asked. No problems with this part.",
+            gatheringInformation: "I asked about what happened and got the basic story. They said it was an accident. I asked who else lived there and about their relationship. Got what I needed I think.",
+            processAndNextSteps: "I gave them the form and said I'd be in touch. Told them this was standard procedure. Everything seemed clear enough."
+        }
+    },
+    {
+        quality: 'good',
+        description: 'Demonstrates strong self-awareness and specific insights',
+        assessment: {
+            introduction: "I stated my full name, agency (Oregon DHS Child Welfare), and immediately offered my identification without being asked - this seemed to help establish credibility. I verified I was speaking with the correct person by asking 'Are you Larisa Baskin?' I noticed that providing my business card along with my ID helped the parent feel this was official but not threatening. One area for improvement: I could have briefly mentioned that I'm a mandated reporter to be fully transparent about my role.",
+            reasonForContact: "I was direct but compassionate, saying 'We received a report from Karina's school because they noticed she came with some injuries - specifically a black eye and cut lip.' I immediately followed with 'I understand this must be concerning to hear, and I want you to know I'm here to understand what happened and ensure your daughters are safe.' This balance of transparency and empathy seemed to help. However, I could have asked 'How are you feeling hearing this?' to better gauge her emotional state.",
+            responsiveToParent: "When Larisa became defensive saying 'It's not what it looks like!' I responded with 'I can see you're upset, and that's completely understandable. Any parent would be concerned.' This validation helped de-escalate. I used reflective listening when she explained about teenage defiance, saying 'So you're saying Karina and Roger have been having conflicts around rules and boundaries?' However, when she described the physical altercation, I realize I showed some involuntary body language (tensing up) that she might have noticed. I need to work on maintaining neutral body language even when hearing concerning information.",
+            permissionToEnter: "I asked 'May I come in so we can discuss this privately?' and when she agreed, I thanked her. I also asked 'Is there anyone else home right now? And where is Katie, your younger daughter?' This helped me assess immediate safety and who was present. I respected her space by letting her choose where we sat. I think I handled this well, though I could have also asked if this was a good time or if she needed a few minutes to check on her younger child.",
+            gatheringInformation: "I used open-ended questions like 'Can you tell me more about what happened with Karina's injuries?' and 'You mentioned they don't always get along - can you tell me more about that?' I gathered info about the incident, family dynamics, Roger's role, and discipline methods. I also remembered to ask about tribal heritage for ICWA compliance. Areas I missed: I didn't ask about previous CPS involvement, domestic violence history between adults, substance use, or what supports the family has. I was so focused on the immediate incident that I missed the bigger picture.",
+            processAndNextSteps: "I provided the 1536 pamphlet saying 'This information explains your rights and the assessment process.' I clearly stated next steps: 'I'll need to speak with Karina when she returns from school, and I'll also need to see Katie to ensure she's safe. This assessment typically takes 30-60 days, and I'll be in regular contact with you throughout.' However, I realize I didn't ask if she had questions about the process or if she needed any immediate resources. I also should have given a more specific timeframe for when I'd next be in contact."
+        }
+    },
+    {
+        quality: 'mixed',
+        description: 'Shows some reflection but misses key elements',
+        assessment: {
+            introduction: "I introduced myself as being from Child Welfare and showed my badge. The parent asked for ID which I provided. I confirmed I was talking to the right person. I think this went reasonably well, though the parent seemed immediately suspicious when I said 'Child Welfare' - maybe I should have said the full department name to sound more official.",
+            reasonForContact: "I explained that the school had called about Daniel's tooth pain and missed dental appointments. I tried to be factual about it. The parent got defensive right away calling it 'ridiculous' so I'm not sure if my approach was too direct. Maybe I should have eased into it more or shown more understanding.",
+            responsiveToParent: "When they said they were good parents and had been meaning to take him but were busy, I said I understood things can get hectic. I tried to stay calm when they got defensive. I listened to their explanation about financial difficulties. I think I handled their emotions okay but maybe could have been more supportive.",
+            permissionToEnter: "I asked if I could come in to discuss it and they agreed, though reluctantly. They said they only had a few minutes which put some pressure on the conversation. Looking back, I should have acknowledged their time constraint and maybe asked if there was a better time to talk.",
+            gatheringInformation: "I asked if all three children were home and about the missed medical appointments. They told me about financial difficulties which was important context. But I realize now I didn't ask about medical insurance, what 'cheaper options' they were looking for, or if they'd tried applying for state healthcare. I also didn't ask about the children's overall health or other needs.",
+            processAndNextSteps: "I gave them the rights pamphlet but I don't think I explained it well - just handed it over. I mentioned we'd need to ensure the children's medical needs were met but wasn't specific about how. I should have talked about resources for low-cost dental care or helped them understand what services we could provide. The conversation ended abruptly because of their time constraint."
+        }
+    },
+    {
+        quality: 'poor',
+        description: 'Minimal reflection and defensive tone',
+        assessment: {
+            introduction: "I told them who I was and showed ID. The parent was difficult from the start, demanding to see identification. I handled it professionally.",
+            reasonForContact: "I explained about the report. The parent immediately got defensive which made my job harder. I stated the facts about what was reported. Not much else I could do when they're being uncooperative.",
+            responsiveToParent: "They kept arguing and making excuses. I remained professional and didn't argue back. It's hard to be responsive when someone is being so defensive and not accepting responsibility.",
+            permissionToEnter: "I asked to come in and they said yes, though they complained about only having a few minutes. At least they cooperated with letting me in.",
+            gatheringInformation: "I asked the necessary questions about where the children were and what happened. They gave me some information about financial problems. I got the basic facts I needed for my report.",
+            processAndNextSteps: "I gave them the required paperwork. They seemed in a rush to end the conversation so I wrapped it up. I'll follow up as needed per protocol."
+        }
+    }
+];
