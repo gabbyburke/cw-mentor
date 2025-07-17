@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { AppState, Message, Page, SelfAssessment, CaseworkerAnalysis, SupervisorAnalysis } from '../types/types';
 import { createChatSession, createMentorshipChatSession, createSimulationChatSession, analyzeCaseworkerPerformance, analyzeSupervisorCoaching } from '../services/geminiService';
@@ -24,56 +23,154 @@ const Header = ({
     currentView: 'caseworker' | 'supervisor',
     onViewChange: (view: 'caseworker' | 'supervisor') => void,
     onTitleClick: () => void
-}) => (
-    <header className="text-center mb-6 relative">
-        {showHomeButton && (
-            <button 
-                onClick={onHomeClick} 
-                className="btn-secondary absolute top-0 left-0 -translate-y-1/2 rounded-full p-3"
-                aria-label="Back to Home"
-            >
-                <HomeIcon className="w-6 h-6" />
-            </button>
-        )}
-        <h1 className="h1 cursor-pointer" onClick={onTitleClick}>
-          <span>Social Work</span> <span style={{color: 'var(--primary)'}}>Coaching Simulator</span>
-        </h1>
-        <div className="flex justify-center gap-2 mt-4">
-            <button 
-                onClick={() => onViewChange('caseworker')}
-                className={currentView === 'caseworker' ? 'btn-primary' : 'btn-secondary'}
-            >
-                Caseworker View
-            </button>
-            <button 
-                onClick={() => onViewChange('supervisor')}
-                className={currentView === 'supervisor' ? 'btn-primary' : 'btn-secondary'}
-            >
-                Supervisor View
-            </button>
-        </div>
-    </header>
-);
+}) => {
+    return (
+        <header className="text-center relative" style={{marginBottom: 0}}>
+            {showHomeButton && (
+                <button 
+                    onClick={onHomeClick} 
+                    className="btn-secondary absolute top-0 left-0 -translate-y-1/2 rounded-full p-3"
+                    aria-label="Back to Home"
+                >
+                    <HomeIcon className="w-6 h-6" />
+                </button>
+            )}
+            <h1 className="h1 cursor-pointer" onClick={onTitleClick}>
+              <span>Social Work</span> <span style={{color: 'var(--primary)'}}>Coaching Simulator</span>
+            </h1>
+            <div className="flex justify-center gap-2 mt-4">
+                <button 
+                    onClick={() => onViewChange('caseworker')}
+                    className={currentView === 'caseworker' ? 'btn-primary' : 'btn-secondary'}
+                >
+                    Caseworker View
+                </button>
+                <button 
+                    onClick={() => onViewChange('supervisor')}
+                    className={currentView === 'supervisor' ? 'btn-primary' : 'btn-secondary'}
+                >
+                    Supervisor View
+                </button>
+            </div>
+        </header>
+    );
+};
 
-const CurriculumDisplay = () => (
-    <article className="card">
-      <div className="flex items-center gap-3 mb-4">
-        <ClipboardIcon className="w-8 h-8" style={{color: 'var(--primary)'}} />
-        <h2 className="h2">Core Curriculum</h2>
-      </div>
-      <p style={{color: 'var(--on-surface-variant)'}} className="mb-6">
-        Simulations and feedback are based on these core practice behaviors.
-      </p>
-      <div className="space-y-4">
-        {ASSESSMENT_CRITERIA.map((criterion) => (
-          <div key={criterion.key} className="p-4" style={{backgroundColor: 'var(--surface-container-low)', borderRadius: 'var(--unit-2)', border: '1px solid var(--outline-variant)'}}>
-            <h3 className="h5">{criterion.title}</h3>
-            <p style={{color: 'var(--on-surface-variant)', fontSize: '0.875rem'}}>{criterion.description}</p>
-          </div>
-        ))}
-      </div>
-    </article>
-);
+const AboutCurriculumLink = () => {
+    const [showAboutModal, setShowAboutModal] = useState(false);
+    
+    return (
+        <div className="text-center" style={{
+            marginTop: 'var(--unit-6)',
+            marginBottom: 'var(--unit-8)'
+        }}>
+            <div className="relative inline-block">
+                <button
+                    className="about-curriculum-trigger"
+                    onMouseEnter={() => setShowAboutModal(true)}
+                    onMouseLeave={() => setShowAboutModal(false)}
+                    onClick={() => setShowAboutModal(!showAboutModal)}
+                    aria-label="About Core Curriculum"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 'var(--unit-2)',
+                        color: 'var(--on-surface-variant)',
+                        fontSize: '0.875rem',
+                        padding: 'var(--unit-2) var(--unit-3)',
+                        borderRadius: 'var(--unit-5)',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease'
+                    }}
+                    onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--surface-container-low)';
+                        e.currentTarget.style.color = 'var(--primary)';
+                    }}
+                    onMouseOut={(e) => {
+                        if (!showAboutModal) {
+                            e.currentTarget.style.backgroundColor = 'transparent';
+                            e.currentTarget.style.color = 'var(--on-surface-variant)';
+                        }
+                    }}
+                >
+                    <QuestionMarkCircleIcon className="w-5 h-5" />
+                    <span>About Core Curriculum</span>
+                </button>
+                {showAboutModal && (
+                    <div 
+                        className="about-modal"
+                        onMouseEnter={() => setShowAboutModal(true)}
+                        onMouseLeave={() => setShowAboutModal(false)}
+                        style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            marginTop: 'var(--unit-2)',
+                            width: '500px',
+                            maxWidth: '90vw',
+                            maxHeight: '70vh',
+                            backgroundColor: 'var(--surface)',
+                            border: '1px solid var(--outline-variant)',
+                            borderRadius: 'var(--unit-3)',
+                            padding: 'var(--unit-5)',
+                            boxShadow: '0 4px 20px var(--shadow)',
+                            zIndex: 1000,
+                            animation: 'modalFadeIn 0.3s ease-out',
+                            overflowY: 'auto',
+                            textAlign: 'left'
+                        }}
+                    >
+                        <h3 className="h5 mb-3" style={{textAlign: 'left'}}>About the Core Curriculum</h3>
+                        <p style={{fontSize: '0.875rem', lineHeight: '1.6', color: 'var(--on-surface-variant)', marginBottom: 'var(--unit-3)', textAlign: 'left'}}>
+                            This simulator is built around evidence-based practice behaviors essential for effective social work. The curriculum framework is derived from the Arkansas Division of Children and Family Services competency model.
+                        </p>
+                        <p style={{fontSize: '0.875rem', lineHeight: '1.6', color: 'var(--on-surface-variant)', marginBottom: 'var(--unit-3)', textAlign: 'left'}}>
+                            Each simulation and feedback session focuses on developing these core competencies:
+                        </p>
+                        
+                        <div style={{marginBottom: 'var(--unit-4)'}}>
+                            {ASSESSMENT_CRITERIA.map((criterion) => (
+                                <div key={criterion.key} style={{
+                                    marginBottom: 'var(--unit-3)',
+                                    padding: 'var(--unit-3)',
+                                    backgroundColor: 'var(--surface-container-low)',
+                                    borderRadius: 'var(--unit-2)',
+                                    border: '1px solid var(--outline-variant)'
+                                }}>
+                                    <h4 style={{
+                                        fontSize: '0.925rem',
+                                        fontWeight: '600',
+                                        color: 'var(--on-surface)',
+                                        marginBottom: 'var(--unit-1)',
+                                        textAlign: 'left'
+                                    }}>
+                                        {criterion.title}
+                                    </h4>
+                                    <p style={{
+                                        fontSize: '0.825rem',
+                                        lineHeight: '1.5',
+                                        color: 'var(--on-surface-variant)',
+                                        textAlign: 'left',
+                                        margin: 0
+                                    }}>
+                                        {criterion.description}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
+                        <p style={{fontSize: '0.875rem', lineHeight: '1.6', color: 'var(--on-surface-variant)', textAlign: 'left'}}>
+                            The AI provides real-time coaching aligned with these standards, helping both new and experienced workers refine their skills in a safe, supportive environment.
+                        </p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
 
 const ChatInterface = ({
   history,
@@ -191,7 +288,6 @@ const HomePage = ({ onSelectPage }: { onSelectPage: (page: Page) => void }) => (
                 <p style={{color: 'var(--on-surface-variant)', fontSize: '0.875rem', marginTop: 'var(--unit-1)'}}>Ask questions about the curriculum and best practices.</p>
             </article>
         </div>
-        <CurriculumDisplay />
     </div>
 );
 
@@ -510,24 +606,27 @@ const ReviewPage = ({
         <div className="max-w-4xl mx-auto">
            {renderContent()}
         </div>
-    )
+    );
 };
 
-const GeneralQAPage = () => {
+const QAPage = () => {
     const [chatSession] = useState(() => createMentorshipChatSession(GENERAL_QA_SYSTEM_PROMPT));
     const [history, setHistory] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSendMessage = useCallback(async (message: string) => {
         setIsLoading(true);
-        setHistory(prev => [...prev, { role: 'user', parts: message }]);
+        const userMessage: Message = { role: 'user', parts: message };
+        setHistory(prev => [...prev, userMessage]);
+
         try {
-            let fullResponse = '';
             const stream = await chatSession.sendMessageStream({ message });
+            let fullResponse = '';
             for await (const chunk of stream) {
                 fullResponse += chunk.text;
             }
-            setHistory(prev => [...prev, { role: 'model', parts: fullResponse }]);
+            const modelMessage: Message = { role: 'model', parts: fullResponse };
+            setHistory(prev => [...prev, modelMessage]);
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : 'An unknown error occurred.';
             setHistory(prev => [...prev, { role: 'model', parts: `Sorry, an error occurred: ${errorMsg}` }]);
@@ -536,399 +635,242 @@ const GeneralQAPage = () => {
         }
     }, [chatSession]);
 
-    const mentorshipGreeting = {
-        role: 'model' as const,
-        parts: "Hey there! It's great to connect. I'm an AI assistant, and I'm here to offer some insights, support, or just be a sounding board as you navigate your studies and journey into the field. What's on your mind today? Are you grappling with a particular class, a situation in your practicum, or just thinking about what's next?"
-    };
-
     return (
         <div className="max-w-4xl mx-auto h-[calc(100vh-12rem)]">
             <ChatInterface
-                chatTitle="PSU Social Work Mentorship"
+                chatTitle="Q&A with AI Mentor"
                 history={history}
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
-                placeholder="Ask a question about the curriculum, field practice, or social work..."
-                initialMessage={mentorshipGreeting}
+                placeholder="Ask a question about social work practice..."
+                initialMessage={{role: 'model', parts: "Hello! I'm here to help answer your questions about the core curriculum and best practices in social work. Feel free to ask me anything about the assessment criteria, simulation scenarios, or how to improve your skills."}}
             />
         </div>
     );
 };
 
-const SupervisorDashboard = ({ state, onLoadTranscript, setState }: { state: AppState, onLoadTranscript: (transcript: Message[]) => void, setState: React.Dispatch<React.SetStateAction<AppState>> }) => {
-    const [uploadText, setUploadText] = useState('');
-    const [showUpload, setShowUpload] = useState(false);
+const SupervisorDashboard = ({ onBack }: { onBack: () => void }) => {
+    const [transcriptInput, setTranscriptInput] = useState('');
+    const [supervisorFeedback, setSupervisorFeedback] = useState('');
+    const [supervisorAnalysis, setSupervisorAnalysis] = useState<SupervisorAnalysis | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<'input' | 'results'>('input');
 
-    const handleUploadTranscript = async () => {
-        if (!uploadText.trim()) return;
-        
-        // Store the raw transcript and immediately trigger AI analysis
-        const rawTranscript: Message[] = [
-            { 
-                role: 'model', 
-                parts: uploadText.trim(),
-                speaker: 'Raw Transcript'
-            }
-        ];
-        
-        onLoadTranscript(rawTranscript);
-        setUploadText('');
-        setShowUpload(false);
-        
-        // Set loading state
-        setState(s => ({ 
-            ...s, 
-            isLoading: true,
-            simulationTranscript: rawTranscript,
-            caseworkerAnalysis: null
-        }));
-        
-        // Immediately analyze the transcript against Arkansas practice behaviors
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError(null);
+
         try {
-            const analysis = await analyzeCaseworkerPerformance(rawTranscript, {});
-            // Store the analysis in the app state
-            setState(s => ({ 
-                ...s, 
-                caseworkerAnalysis: analysis,
-                isLoading: false
-            }));
-        } catch (error) {
-            console.error('Analysis failed:', error);
-            setState(s => ({ 
-                ...s, 
-                isLoading: false,
-                error: error instanceof Error ? error.message : 'Analysis failed'
-            }));
+            // Convert transcript string to Message array format
+            const transcriptMessages: Message[] = transcriptInput
+                .split('\n')
+                .filter(line => line.trim())
+                .map((line, index) => ({
+                    role: index % 2 === 0 ? 'user' : 'model' as 'user' | 'model',
+                    parts: line.trim()
+                }));
+            
+            const analysis = await analyzeSupervisorCoaching(supervisorFeedback, transcriptMessages);
+            setSupervisorAnalysis(analysis);
+            setViewMode('results');
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unknown error occurred');
+        } finally {
+            setIsLoading(false);
         }
     };
 
+    const reset = () => {
+        setTranscriptInput('');
+        setSupervisorFeedback('');
+        setSupervisorAnalysis(null);
+        setViewMode('input');
+    };
+
+    if (isLoading) return <LoadingIndicator text="Analyzing supervisor feedback..." />;
+
     return (
         <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-                <h2 className="h2 mb-4">Supervisor Dashboard</h2>
-                <p style={{color: 'var(--on-surface-variant)', fontSize: '1.125rem'}}>
-                    Review caseworker simulations and provide coaching feedback.
-                </p>
-            </div>
+            {error && (
+                <div className="bg-red-100 text-red-700 p-4 rounded-md mb-4">
+                    <strong>Error:</strong> {error}
+                </div>
+            )}
 
-            {/* Upload Transcript Section */}
-            {!state.simulationTranscript.length && (
-                <article className="card mb-6">
-                    <h3 className="h4 mb-4">Quick Demo Setup</h3>
-                    <p style={{color: 'var(--on-surface-variant)', marginBottom: 'var(--unit-4)'}}>
-                        Upload a transcript to quickly review a conversation without going through the full simulation.
-                    </p>
-                    
-                    {!showUpload ? (
-                        <button 
-                            onClick={() => setShowUpload(true)}
-                            className="btn-primary"
-                        >
-                            Upload Transcript for Review
-                        </button>
-                    ) : (
+            {viewMode === 'input' ? (
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="card">
+                        <h2 className="h3 mb-4">Supervisor Coaching Practice</h2>
+                        <p className="text-slate-600 mb-6">
+                            Practice providing effective feedback to caseworkers. Enter a simulation transcript and your coaching feedback, then receive AI analysis on your supervisory approach.
+                        </p>
+
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium mb-2">
-                                    Paste transcript (any format - AI will analyze the raw text)
+                                <label htmlFor="transcript" className="block text-sm font-medium text-slate-700 mb-1">
+                                    Simulation Transcript
                                 </label>
                                 <textarea
-                                    value={uploadText}
-                                    onChange={(e) => setUploadText(e.target.value)}
+                                    id="transcript"
                                     rows={8}
-                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder={`Paste your transcript here in any format. The AI will analyze it directly against the Arkansas practice behaviors.
-
-Examples:
-- SRT format with timestamps
-- Simple dialogue format
-- Meeting notes
-- Any conversation transcript`}
+                                    required
+                                    value={transcriptInput}
+                                    onChange={(e) => setTranscriptInput(e.target.value)}
+                                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Paste the conversation transcript between the caseworker and parent..."
                                 />
                             </div>
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={handleUploadTranscript}
-                                    className="btn-primary"
-                                    disabled={!uploadText.trim()}
-                                >
-                                    Load Transcript
-                                </button>
-                                <button 
-                                    onClick={() => {setShowUpload(false); setUploadText('');}}
-                                    className="btn-secondary"
-                                >
-                                    Cancel
-                                </button>
+
+                            <div>
+                                <label htmlFor="feedback" className="block text-sm font-medium text-slate-700 mb-1">
+                                    Your Supervisor Feedback
+                                </label>
+                                <textarea
+                                    id="feedback"
+                                    rows={6}
+                                    required
+                                    value={supervisorFeedback}
+                                    onChange={(e) => setSupervisorFeedback(e.target.value)}
+                                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Write your coaching feedback for the caseworker..."
+                                />
                             </div>
                         </div>
-                    )}
-                </article>
-            )}
 
-            {/* Show simulation data if available */}
-            {state.simulationTranscript.length > 0 ? (
+                        <button
+                            type="submit"
+                            className="btn-primary mt-6"
+                            disabled={!transcriptInput.trim() || !supervisorFeedback.trim()}
+                        >
+                            Get AI Analysis
+                        </button>
+                    </div>
+                </form>
+            ) : (
                 <div className="space-y-6">
-                    {/* Simulation Transcript */}
-                    <article className="card">
-                        <h3 className="h4 mb-4">Simulation Transcript</h3>
-                        <div className="space-y-3 max-h-96 overflow-y-auto">
-                            {state.simulationTranscript.map((msg, index) => (
-                                <div key={index} className="p-3" style={{
-                                    backgroundColor: msg.role === 'user' ? 'var(--primary-container)' : 'var(--surface-container-low)',
-                                    borderRadius: 'var(--unit-2)',
-                                    border: '1px solid var(--outline-variant)'
-                                }}>
-                                    <div className="font-medium text-sm mb-1">
-                                        {msg.speaker || (msg.role === 'user' ? 'Caseworker' : 'Client')}
-                                    </div>
-                                    <div style={{fontSize: '0.875rem'}}>{msg.parts}</div>
-                                </div>
-                            ))}
-                        </div>
-                    </article>
-
-                    {/* Caseworker Self-Assessment */}
-                    {state.selfAssessment && (
-                        <article className="card">
-                            <h3 className="h4 mb-4">Caseworker Self-Assessment</h3>
+                    {supervisorAnalysis && (
+                        <div className="card">
+                            <h3 className="h3 mb-4">AI Analysis of Your Coaching</h3>
+                            
                             <div className="space-y-4">
-                                {ASSESSMENT_CRITERIA.map((criterion) => (
-                                    <div key={criterion.key}>
-                                        <h4 className="h6">{criterion.title}</h4>
-                                        <p style={{fontSize: '0.875rem', color: 'var(--on-surface-variant)'}}>
-                                            {state.selfAssessment![criterion.key] || 'No response provided'}
-                                        </p>
-                                    </div>
-                                ))}
+                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <h4 className="font-semibold text-blue-800 mb-2">Feedback on Acknowledging Strengths</h4>
+                                    <p className="text-blue-700">{supervisorAnalysis.feedbackOnStrengths}</p>
+                                </div>
+
+                                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                                    <h4 className="font-semibold text-amber-800 mb-2">Feedback on Constructive Criticism</h4>
+                                    <p className="text-amber-700">{supervisorAnalysis.feedbackOnCritique}</p>
+                                </div>
+
+                                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                    <h4 className="font-semibold text-green-800 mb-2">Overall Tone Assessment</h4>
+                                    <p className="text-green-700 font-medium">{supervisorAnalysis.overallTone}</p>
+                                </div>
                             </div>
-                        </article>
-                    )}
 
-                    {/* Loading Indicator */}
-                    {state.isLoading && (
-                        <article className="card text-center">
-                            <LoadingIndicator text="Analyzing transcript against practice behaviors..." />
-                        </article>
-                    )}
-
-                    {/* AI Analysis of Caseworker */}
-                    {state.caseworkerAnalysis && (
-                        <div className="space-y-6">
-                            {/* Criteria Analysis */}
-                            {state.caseworkerAnalysis.criteriaAnalysis && (
-                                <article className="card">
-                                    <h3 className="h4 mb-4">Assessment Criteria Analysis</h3>
-                                    <div className="space-y-4">
-                                        {state.caseworkerAnalysis.criteriaAnalysis.map((criterion, index) => (
-                                            <div key={index} className="p-4 border rounded-lg" style={{
-                                                backgroundColor: criterion.met ? 'var(--tertiary-container)' : 'var(--error-container)',
-                                                borderColor: criterion.met ? 'var(--tertiary)' : 'var(--error)'
-                                            }}>
-                                                <div className="flex items-center gap-2 mb-2">
-                                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold`} style={{
-                                                        backgroundColor: criterion.met ? 'var(--tertiary)' : 'var(--error)'
-                                                    }}>
-                                                        {criterion.met ? '✓' : '✗'}
-                                                    </div>
-                                                    <h4 className="h6">{criterion.criterion}</h4>
-                                                    <span className={`px-2 py-1 rounded text-xs font-medium`} style={{
-                                                        backgroundColor: criterion.met ? 'var(--tertiary)' : 'var(--error)',
-                                                        color: 'white'
-                                                    }}>
-                                                        {criterion.score}
-                                                    </span>
-                                                </div>
-                                                <div className="mb-2">
-                                                    <strong>Evidence:</strong> 
-                                                    <span className="italic ml-1" style={{color: 'var(--on-surface-variant)'}}>
-                                                        "{criterion.evidence}"
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    <strong>Feedback:</strong> {criterion.feedback}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </article>
-                            )}
-
-                            {/* Overall Analysis */}
-                            <article className="card">
-                                <h3 className="h4 mb-4">AI Analysis of Caseworker Performance</h3>
-                                <div className="mb-6 p-4" style={{backgroundColor: 'var(--primary-container)', borderRadius: 'var(--unit-2)'}}>
-                                    <h4 className="h6">Overall Summary</h4>
-                                    <p style={{fontSize: '0.875rem'}}>{state.caseworkerAnalysis.overallSummary}</p>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="p-4" style={{backgroundColor: 'var(--tertiary-container)', borderRadius: 'var(--unit-2)'}}>
-                                        <h4 className="h6 flex items-center gap-2 mb-2">
-                                            <span className="w-5 h-5">✓</span>Strengths
-                                        </h4>
-                                        <ul className="list-disc list-inside space-y-1" style={{fontSize: '0.875rem'}}>
-                                            {state.caseworkerAnalysis.strengths.map((s,i) => <li key={i}>{s}</li>)}
-                                        </ul>
-                                    </div>
-                                    <div className="p-4" style={{backgroundColor: 'var(--error-container)', borderRadius: 'var(--unit-2)'}}>
-                                        <h4 className="h6 flex items-center gap-2 mb-2">
-                                            <span className="w-5 h-5">💡</span>Areas for Improvement
-                                        </h4>
-                                        <ul className="space-y-2" style={{fontSize: '0.875rem'}}>
-                                            {state.caseworkerAnalysis.areasForImprovement.map((item,i) => 
-                                                <li key={i}><strong>{item.area}:</strong> {item.suggestion}</li>
-                                            )}
-                                        </ul>
-                                    </div>
-                                </div>
-                            </article>
+                            <button onClick={reset} className="btn-secondary mt-6">
+                                Try Another Example
+                            </button>
                         </div>
-                    )}
-
-                    {/* Supervisor Feedback Analysis */}
-                    {state.supervisorAnalysis && (
-                        <article className="card">
-                            <h3 className="h4 mb-4">AI Analysis of Your Coaching</h3>
-                            <div className="space-y-4" style={{fontSize: '0.875rem'}}>
-                                <div>
-                                    <strong>Feedback on Strengths:</strong> {state.supervisorAnalysis.feedbackOnStrengths}
-                                </div>
-                                <div>
-                                    <strong>Feedback on Critique:</strong> {state.supervisorAnalysis.feedbackOnCritique}
-                                </div>
-                                <div>
-                                    <strong>Overall Tone:</strong> 
-                                    <span className="font-semibold" style={{color: 'var(--primary)'}}> {state.supervisorAnalysis.overallTone}</span>
-                                </div>
-                            </div>
-                        </article>
                     )}
                 </div>
-            ) : (
-                /* No simulation data yet */
-                <article className="card text-center">
-                    <SparklesIcon className="w-16 h-16 mx-auto mb-4" style={{color: 'var(--on-surface-variant)'}} />
-                    <h3 className="h4 mb-2">No Simulations Available</h3>
-                    <p style={{color: 'var(--on-surface-variant)'}}>
-                        Caseworker simulations will appear here for review and coaching feedback.
-                    </p>
-                    <p style={{color: 'var(--on-surface-variant)', fontSize: '0.875rem', marginTop: 'var(--unit-2)'}}>
-                        Switch to Caseworker View to run a simulation.
-                    </p>
-                </article>
             )}
-
-            <CurriculumDisplay />
         </div>
     );
 };
 
 //endregion
 
-const App: React.FC = () => {
-  const [showSplash, setShowSplash] = useState(true);
-  const [currentView, setCurrentView] = useState<'caseworker' | 'supervisor'>('caseworker');
-  const [selectedScenario, setSelectedScenario] = useState<typeof SIMULATION_SCENARIOS[0] | null>(null);
-  const [state, setState] = useState<AppState>({
-    page: 'home',
-    isLoading: false,
-    error: null,
-    simulationTranscript: [],
-    selfAssessment: null,
-    caseworkerAnalysis: null,
-    supervisorFeedback: null,
-    supervisorAnalysis: null,
-  });
+//region --- Main App Component ---
 
-  const handleSetPage = (page: Page) => {
-      // Reset state when navigating
-      setState({
-        page,
-        isLoading: false,
-        error: null,
-        simulationTranscript: [],
-        selfAssessment: null,
-        caseworkerAnalysis: null,
-        supervisorFeedback: null,
-        supervisorAnalysis: null,
-      });
-  };
+export default function App() {
+    const [appState, setAppState] = useState<AppState>({
+        page: 'home',
+        currentView: 'caseworker',
+        showSplash: true
+    });
+    const [selectedScenario, setSelectedScenario] = useState<typeof SIMULATION_SCENARIOS[0] | null>(null);
+    const [simulationTranscript, setSimulationTranscript] = useState<Message[]>([]);
 
-  const handleSimulationComplete = (transcript: Message[]) => {
-      setState(s => ({ ...s, page: 'review', simulationTranscript: transcript }));
-  };
+    const handleSplashComplete = () => {
+        setAppState(prev => ({ ...prev, showSplash: false }));
+    };
 
-  const handleReviewComplete = (data: {selfAssessment: SelfAssessment, caseworkerAnalysis: CaseworkerAnalysis, supervisorFeedback: string, supervisorAnalysis: SupervisorAnalysis}) => {
-      setState(s => ({ 
-        ...s, 
-        selfAssessment: data.selfAssessment,
-        caseworkerAnalysis: data.caseworkerAnalysis,
-        supervisorFeedback: data.supervisorFeedback,
-        supervisorAnalysis: data.supervisorAnalysis
-      }));
-  };
+    const handlePageChange = (page: Page) => {
+        setAppState(prev => ({ ...prev, page }));
+    };
 
-  const handleLoadTranscript = (transcript: Message[]) => {
-      setState(s => ({ ...s, simulationTranscript: transcript }));
-  };
-  
-  const handleScenarioSelect = (scenario: typeof SIMULATION_SCENARIOS[0]) => {
-    setSelectedScenario(scenario);
-    handleSetPage('simulation');
-  };
+    const handleViewChange = (view: 'caseworker' | 'supervisor') => {
+        setAppState(prev => ({ 
+            ...prev, 
+            currentView: view,
+            page: 'home'
+        }));
+    };
 
-  const renderPage = () => {
-    // Supervisor view shows different content
-    if (currentView === 'supervisor') {
-      return <SupervisorDashboard state={state} onLoadTranscript={handleLoadTranscript} setState={setState} />;
+    const handleGoHome = () => {
+        setAppState(prev => ({ ...prev, page: 'home' }));
+        setSelectedScenario(null);
+        setSimulationTranscript([]);
+    };
+
+    const handleScenarioSelect = (scenario: typeof SIMULATION_SCENARIOS[0]) => {
+        setSelectedScenario(scenario);
+        handlePageChange('simulation-with-scenario');
+    };
+
+    const handleSimulationComplete = (transcript: Message[]) => {
+        setSimulationTranscript(transcript);
+        handlePageChange('review');
+    };
+
+    const handleReviewComplete = (data: any) => {
+        console.log('Review complete:', data);
+        handleGoHome();
+    };
+
+    if (appState.showSplash) {
+        return <SplashScreen onComplete={handleSplashComplete} />;
     }
-    
-    // Caseworker view (default)
-    switch (state.page) {
-      case 'scenario-selection':
-        return <ScenarioSelectionPage onScenarioSelect={handleScenarioSelect} />;
-      case 'simulation':
-        return selectedScenario ? <SimulationPageWithScenario scenario={selectedScenario} onComplete={handleSimulationComplete} /> : <SimulationPage onComplete={handleSimulationComplete} />;
-      case 'review':
-        return <ReviewPage simulationTranscript={state.simulationTranscript} onComplete={handleReviewComplete} />;
-      case 'qa':
-        return <GeneralQAPage />;
-      case 'home':
-      default:
-        return <HomePage onSelectPage={handleSetPage} />;
-    }
-  };
 
-  if (showSplash) {
-    return <SplashScreen onComplete={(persona) => {
-      setCurrentView(persona);
-      setShowSplash(false);
-    }} />;
-  }
+    return (
+        <div className="container">
+            <Header 
+                onHomeClick={handleGoHome}
+                showHomeButton={appState.page !== 'home'}
+                currentView={appState.currentView}
+                onViewChange={handleViewChange}
+                onTitleClick={handleGoHome}
+            />
+            <AboutCurriculumLink />
 
-  return (
-    <div className="app-container">
-      <Header 
-        onHomeClick={() => handleSetPage('home')} 
-        showHomeButton={state.page !== 'home'}
-        currentView={currentView}
-        onViewChange={setCurrentView}
-        onTitleClick={() => {
-          setCurrentView('caseworker');
-          handleSetPage('home');
-        }}
-      />
-      <main>
-        {state.error && (
-            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 max-w-4xl mx-auto" role="alert" style={{borderRadius: 'var(--unit-2)'}}>
-                <p className="font-bold">Error</p>
-                <p>{state.error}</p>
-            </div>
-        )}
-        {renderPage()}
-      </main>
-    </div>
-  );
-};
+            {appState.currentView === 'caseworker' ? (
+                <>
+                    {appState.page === 'home' && <HomePage onSelectPage={handlePageChange} />}
+                    {appState.page === 'scenario-selection' && <ScenarioSelectionPage onScenarioSelect={handleScenarioSelect} />}
+                    {appState.page === 'simulation' && <SimulationPage onComplete={handleSimulationComplete} />}
+                    {appState.page === 'simulation-with-scenario' && selectedScenario && (
+                        <SimulationPageWithScenario 
+                            scenario={selectedScenario} 
+                            onComplete={handleSimulationComplete} 
+                        />
+                    )}
+                    {appState.page === 'review' && (
+                        <ReviewPage 
+                            simulationTranscript={simulationTranscript}
+                            onComplete={handleReviewComplete}
+                        />
+                    )}
+                    {appState.page === 'qa' && <QAPage />}
+                </>
+            ) : (
+                <SupervisorDashboard onBack={handleGoHome} />
+            )}
+        </div>
+    );
+}
 
-export default App;
+//endregion

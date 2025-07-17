@@ -1,6 +1,6 @@
 import type { Chat } from '@google/genai';
 
-export type Page = 'home' | 'scenario-selection' | 'simulation' | 'review' | 'qa';
+export type Page = 'home' | 'scenario-selection' | 'simulation' | 'simulation-with-scenario' | 'review' | 'qa';
 
 export interface Message {
   role: 'user' | 'model';
@@ -38,15 +38,6 @@ export interface SupervisorAnalysis {
 
 export interface AppState {
   page: Page;
-  isLoading: boolean;
-  error: string | null;
-
-  // Simulation Data
-  simulationTranscript: Message[];
-  
-  // Review Page Data
-  selfAssessment: SelfAssessment | null;
-  caseworkerAnalysis: CaseworkerAnalysis | null;
-  supervisorFeedback: string | null;
-  supervisorAnalysis: SupervisorAnalysis | null;
+  currentView: 'caseworker' | 'supervisor';
+  showSplash: boolean;
 }
