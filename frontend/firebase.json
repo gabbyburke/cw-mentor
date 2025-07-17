@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "gps-rit-caseworker-mentor",
     "public": "dist",
     "ignore": [
       "firebase.json",
