@@ -54,3 +54,7 @@ export const ChatBubbleLeftRightIcon = ({ className, style }: { className?: stri
 export const QuestionMarkCircleIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <GoogleIcon name="help" className={className} style={style} />
 );
+
+export const ArrowRightIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="arrow_forward" className={className} style={style} />
+);

@@ -7,6 +7,7 @@ import {
     HomeIcon, BotIcon, UserIcon, SendIcon, SparklesIcon, ClipboardIcon, 
     CheckCircleIcon, LightbulbIcon, ChatBubbleLeftRightIcon, QuestionMarkCircleIcon 
 } from '../utils/icons';
+import SplashScreen from './SplashScreen';
 
 
 //region --- UI Components ---
@@ -825,6 +826,7 @@ Examples:
 //endregion
 
 const App: React.FC = () => {
+  const [showSplash, setShowSplash] = useState(true);
   const [currentView, setCurrentView] = useState<'caseworker' | 'supervisor'>('caseworker');
   const [selectedScenario, setSelectedScenario] = useState<typeof SIMULATION_SCENARIOS[0] | null>(null);
   const [state, setState] = useState<AppState>({
@@ -896,6 +898,10 @@ const App: React.FC = () => {
         return <HomePage onSelectPage={handleSetPage} />;
     }
   };
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
 
   return (
     <div className="app-container">
