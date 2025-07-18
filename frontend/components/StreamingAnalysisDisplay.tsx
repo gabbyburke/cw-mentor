@@ -59,14 +59,14 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
   }, [streamingText, isThinking, thinkingComplete]);
 
   const latestThinkingChunk = thinkingContent[thinkingContent.length - 1] || '';
-  const showThinking = thinkingContent.length > 0 && !isComplete;
+  const showThinking = thinkingContent.length > 0;
 
   return (
     <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-slate-200 h-full overflow-y-auto">
       <div className="flex items-center gap-3 mb-6">
         <SparklesIcon className="w-8 h-8 text-blue-600" />
         <h2 className="text-2xl font-bold text-slate-800">
-          {isComplete ? 'Analysis Complete' : 'Analyzing Your Performance...'}
+          {isComplete ? 'Analysis Complete' : 'Analyzing Your Performance'}
         </h2>
       </div>
       
@@ -103,7 +103,7 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
                 <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse" style={{animationDelay: '150ms'}}></div>
                 <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse" style={{animationDelay: '300ms'}}></div>
               </div>
-              <span className="text-sm font-semibold text-slate-800">AI Thinking Process</span>
+              <span className="text-sm font-semibold" style={{ color: '#374151' }}>AI Thinking Process</span>
             </div>
             {isThinkingExpanded ? (
               <ChevronUpIcon className="w-5 h-5 text-slate-600" />
@@ -153,11 +153,21 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
                 })}
               </div>
             ) : (
-              <p className="text-sm text-slate-600 italic pt-1">
+              <p style={{ 
+                color: '#374151', 
+                padding: '4px 24px 12px 24px',
+                fontSize: '13px',
+                fontWeight: '500',
+                margin: 0
+              }}>
                 {thinkingContent.length > 0 ? (
                   <>
-                    {thinkingContent.length} thinking {thinkingContent.length === 1 ? 'section' : 'sections'} -{' '}
-                    "{thinkingContent[thinkingContent.length - 1].split('\n')[0].substring(0, 60)}..."
+                    {(() => {
+                      const latestContent = thinkingContent[thinkingContent.length - 1].split('\n')[0];
+                      // Strip markdown bold markers
+                      const cleanContent = latestContent.replace(/\*\*/g, '');
+                      return `${cleanContent.substring(0, 60)}...`;
+                    })()}
                   </>
                 ) : (
                   'AI is analyzing...'

@@ -684,7 +684,7 @@ const ReviewPage = ({
                                 />
                             </div>
                         ))}
-                        <button type="submit" className="w-full px-6 py-3 text-white bg-blue-600 rounded-md hover:bg-blue-700 font-semibold">Submit for AI Analysis</button>
+                        <button type="submit" className="btn-glossy-blue w-full">Submit for AI analysis</button>
                     </form>
                 );
             case 'caseworker-analysis':
