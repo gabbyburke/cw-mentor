@@ -28,20 +28,29 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
       }
     `;
     document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
   // Process streaming text based on whether it's thinking or final content
   useEffect(() => {
     if (isThinking && !thinkingComplete) {
-      // Extract thinking chunks
-      const thinkingLines = streamingText
-        .split('\n')
-        .filter(line => line.startsWith('THINKING:'))
-        .map(line => line.replace('THINKING:', '').trim());
+      // Split by "THINKING:" to get all sections
+      const parts = streamingText.split(/THINKING:/);
+      const thinkingSections: string[] = [];
       
-      if (thinkingLines.length > 0) {
-        setThinkingContent(thinkingLines);
+      // Skip first part if empty (before first THINKING:)
+      for (let i = 1; i < parts.length; i++) {
+        const section = parts[i].trim();
+        if (section) {
+          // Each section might have multiple paragraphs, keep them together
+          thinkingSections.push(section);
+        }
+      }
+      
+      if (thinkingSections.length > 0) {
+        setThinkingContent(thinkingSections);
       }
     } else if (thinkingComplete || !isThinking) {
       // This is final content
@@ -106,23 +115,53 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
           <div className={`px-6 pb-5 overflow-hidden transition-all duration-300 ${isThinkingExpanded ? 'max-h-96 overflow-y-auto' : 'max-h-16'}`}>
             {isThinkingExpanded ? (
               <div className="space-y-3">
-                {thinkingContent.map((chunk, index) => (
-                  <div 
-                    key={index} 
-                    className="p-3 bg-white bg-opacity-60 rounded-lg border border-gray-200"
-                    style={{
-                      fontSize: '13px',
-                      lineHeight: '1.6',
-                      color: '#334155' // slate-700
-                    }}
-                  >
-                    {chunk}
-                  </div>
-                ))}
+                {thinkingContent.map((chunk, index) => {
+                  // Parse markdown-style bold text
+                  const formattedChunk = chunk.split('\n').map((line, lineIndex) => {
+                    // Replace **text** with bold spans
+                    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+                    return (
+                      <span key={lineIndex}>
+                        {parts.map((part, partIndex) => {
+                          if (part.startsWith('**') && part.endsWith('**')) {
+                            return (
+                              <strong key={partIndex} className="font-semibold text-slate-800">
+                                {part.slice(2, -2)}
+                              </strong>
+                            );
+                          }
+                          return part;
+                        })}
+                        {lineIndex < chunk.split('\n').length - 1 && <br />}
+                      </span>
+                    );
+                  });
+                  
+                  return (
+                    <div 
+                      key={index} 
+                      className="p-3 bg-white bg-opacity-60 rounded-lg border border-gray-200"
+                      style={{
+                        fontSize: '13px',
+                        lineHeight: '1.6',
+                        color: '#334155' // slate-700
+                      }}
+                    >
+                      {formattedChunk}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-slate-600 italic pt-1">
-                {latestThinkingChunk ? `"${latestThinkingChunk.substring(0, 80)}..."` : 'AI is analyzing...'}
+                {thinkingContent.length > 0 ? (
+                  <>
+                    {thinkingContent.length} thinking {thinkingContent.length === 1 ? 'section' : 'sections'} -{' '}
+                    "{thinkingContent[thinkingContent.length - 1].split('\n')[0].substring(0, 60)}..."
+                  </>
+                ) : (
+                  'AI is analyzing...'
+                )}
               </p>
             )}
           </div>

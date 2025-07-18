@@ -224,16 +224,26 @@ const ChatInterface = ({
       <div className="flex-grow overflow-y-auto pr-2 space-y-4">
         {allMessages.map((msg, index) => (
           <div key={index} className={`chat-message ${msg.role === 'user' ? 'user' : ''}`}>
-            {msg.role === 'model' && <BotIcon className="w-8 h-8 flex-shrink-0 rounded-full p-2" style={{backgroundColor: 'var(--primary)', color: 'var(--on-primary)'}} />}
+            {msg.role === 'model' && (
+              <div className="chat-icon gradient-bot-icon">
+                <BotIcon />
+              </div>
+            )}
             <div className={`chat-bubble ${msg.role}`}>
               <p style={{fontSize: '0.875rem', lineHeight: '1.5', whiteSpace: 'pre-wrap'}}>{msg.parts}</p>
             </div>
-             {msg.role === 'user' && <UserIcon className="w-8 h-8 flex-shrink-0 rounded-full p-2" style={{backgroundColor: 'var(--surface-variant)', color: 'var(--on-surface-variant)'}} />}
+            {msg.role === 'user' && (
+              <div className="chat-icon gradient-user-icon">
+                <UserIcon />
+              </div>
+            )}
           </div>
         ))}
          {isLoading && (
             <div className="chat-message">
-              <BotIcon className="w-8 h-8 flex-shrink-0 rounded-full p-2" style={{backgroundColor: 'var(--primary)', color: 'var(--on-primary)'}} />
+              <div className="chat-icon gradient-bot-icon">
+                <BotIcon />
+              </div>
               <div className="chat-bubble model">
                 <div className="typing-indicator">
                     <div className="typing-dot"></div>
@@ -245,7 +255,7 @@ const ChatInterface = ({
           )}
         <div ref={chatEndRef} />
       </div>
-      <div className="chat-input-container">
+      <div className="chat-input-wrapper gradient-input-container">
         <input
           type="text"
           value={newMessage}
@@ -258,10 +268,10 @@ const ChatInterface = ({
         <button
           onClick={handleSend}
           disabled={isLoading || !newMessage}
-          className="btn-send"
+          className="chat-send-button gradient-send-button"
           aria-label="Send message"
         >
-          <SendIcon className="w-6 h-6" />
+          <SendIcon />
         </button>
       </div>
     </div>
@@ -381,7 +391,7 @@ const ScenarioSelectionPage = ({ onScenarioSelect }: { onScenarioSelect: (scenar
                         </p>
                         <button 
                             onClick={() => onScenarioSelect(selectedScenario)}
-                            className="btn-primary"
+                            className="btn-glossy-blue"
                         >
                             Start Simulation
                         </button>
@@ -436,9 +446,9 @@ const SimulationPage = ({ onComplete }: { onComplete: (transcript: Message[]) =>
                  <div className="mt-4 text-center">
                     <button 
                         onClick={() => onComplete(history)}
-                        className="px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                        className="btn-glossy-blue"
                     >
-                        Finish & Begin Self-Assessment
+                        Finish and begin self-assessment
                     </button>
                  </div>
              )}
@@ -518,9 +528,9 @@ const SimulationPageWithScenario = ({ scenario, onComplete }: { scenario: typeof
                  <div className="mt-4 text-center">
                     <button 
                         onClick={() => onComplete(history)}
-                        className="px-8 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                        className="btn-glossy-blue"
                     >
-                        Finish & Begin Self-Assessment
+                        Finish and begin self-assessment
                     </button>
                  </div>
              )}
@@ -663,7 +673,6 @@ const ReviewPage = ({
                         <p className="text-slate-600">Reflect on your performance during the simulation based on the core criteria.</p>
                         {ASSESSMENT_CRITERIA.map(c => (
                             <div key={c.key}>
-                                <label htmlFor={c.key} className="block text-md font-medium text-slate-700">{c.title}</label>
                                 <p className="text-sm text-slate-500 mb-2">{c.description}</p>
                                 <textarea
                                     id={c.key}

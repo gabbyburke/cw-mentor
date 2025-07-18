@@ -9,18 +9,48 @@ interface ChatBoxProps {
   isLoading: boolean;
 }
 
+interface FlyingMessage {
+  text: string;
+  id: string;
+}
+
 const ChatBox: React.FC<ChatBoxProps> = ({ history, onSendMessage, isLoading }) => {
   const [newMessage, setNewMessage] = useState('');
+  const [flyingMessages, setFlyingMessages] = useState<FlyingMessage[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const chatMessagesRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [history]);
 
+  const getInputPosition = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      return {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width
+      };
+    }
+    return { left: 0, top: 0, width: 0 };
+  };
+
   const handleSend = () => {
-    if (newMessage.trim()) {
-      onSendMessage(newMessage.trim());
+    if (newMessage.trim() && !isLoading) {
+      const messageText = newMessage.trim();
+      const messageId = Date.now().toString();
+      
+      // Add flying message
+      setFlyingMessages(prev => [...prev, { text: messageText, id: messageId }]);
       setNewMessage('');
+      
+      // Remove flying message and add to chat after animation
+      setTimeout(() => {
+        setFlyingMessages(prev => prev.filter(msg => msg.id !== messageId));
+        onSendMessage(messageText);
+      }, 600);
     }
   };
 
@@ -31,55 +61,79 @@ const ChatBox: React.FC<ChatBoxProps> = ({ history, onSendMessage, isLoading }) 
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-slate-200 h-full flex flex-col p-4">
-      <h2 className="text-xl font-bold text-slate-800 mb-4 px-2">Follow-up Questions</h2>
-      <div className="flex-grow overflow-y-auto pr-2 space-y-4">
+    <div className="chat-container">
+      <h2 className="h5">Follow-up Questions</h2>
+      <div ref={chatMessagesRef} className="chat-messages-wrapper">
         {history.map((msg, index) => (
-          <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-            {msg.role === 'model' && <BotIcon className="w-8 h-8 flex-shrink-0 text-white bg-blue-600 rounded-full p-1.5" />}
-            <div className={`max-w-md p-3 rounded-2xl ${
-              msg.role === 'user' 
-                ? 'bg-blue-600 text-white rounded-br-none' 
-                : 'bg-slate-100 text-slate-800 rounded-bl-none'
-            }`}>
-              <p className="text-sm leading-relaxed">{msg.parts}</p>
+          <div key={index} className={`chat-message ${msg.role === 'user' ? 'user' : 'model'}`}>
+            {msg.role === 'model' && (
+              <div className="chat-icon gradient-bot-icon">
+                <BotIcon />
+              </div>
+            )}
+            <div className={`chat-bubble ${msg.role}`}>
+              <p>{msg.parts}</p>
             </div>
-             {msg.role === 'user' && <UserIcon className="w-8 h-8 flex-shrink-0 text-white bg-slate-500 rounded-full p-1" />}
+            {msg.role === 'user' && (
+              <div className="chat-icon gradient-user-icon">
+                <UserIcon />
+              </div>
+            )}
           </div>
         ))}
-         {isLoading && (
-            <div className="flex items-start gap-3">
-              <BotIcon className="w-8 h-8 flex-shrink-0 text-white bg-blue-600 rounded-full p-1.5" />
-              <div className="max-w-md p-3 rounded-2xl bg-slate-100 text-slate-800 rounded-bl-none">
-                <div className="flex items-center justify-center">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:-0.3s]"></div>
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:-0.15s] mx-1"></div>
-                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                </div>
+        {isLoading && (
+          <div className="chat-message model">
+            <div className="chat-icon gradient-bot-icon">
+              <BotIcon />
+            </div>
+            <div className="chat-bubble model">
+              <div className="typing-indicator">
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
+                <div className="typing-dot"></div>
               </div>
             </div>
-          )}
+          </div>
+        )}
         <div ref={chatEndRef} />
       </div>
-      <div className="mt-4 pt-4 border-t border-slate-200 flex items-center gap-3">
+      <div className="chat-input-wrapper gradient-input-container">
         <input
+          ref={inputRef}
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyPress={handleKeyPress}
           placeholder="Ask a question..."
-          className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow duration-200 text-sm"
+          className="chat-input"
           disabled={isLoading}
         />
         <button
           onClick={handleSend}
           disabled={isLoading || !newMessage}
-          className="p-3 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
+          className="chat-send-button gradient-send-button"
           aria-label="Send message"
         >
-          <SendIcon className="w-6 h-6" />
+          <SendIcon />
         </button>
       </div>
+      
+      {/* Flying Messages */}
+      {flyingMessages.map((msg) => {
+        const inputPos = getInputPosition();
+        return (
+          <div 
+            key={msg.id} 
+            className="flying-message"
+            style={{
+              left: `${inputPos.left}px`,
+              top: `${inputPos.top}px`,
+            }}
+          >
+            <span className="flying-message-text">{msg.text}</span>
+          </div>
+        );
+      })}
     </div>
   );
 };
