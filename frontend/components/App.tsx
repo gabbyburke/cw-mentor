@@ -10,6 +10,7 @@ import {
 import SplashScreen from './SplashScreen';
 import StreamingAnalysisDisplay from './StreamingAnalysisDisplay';
 import AnalysisDisplay from './AnalysisDisplay';
+import ThinkingBox from './ThinkingBox';
 
 
 //region --- UI Components ---
@@ -545,7 +546,7 @@ const ReviewPage = ({
     simulationTranscript: Message[];
     onComplete: (data: {selfAssessment: SelfAssessment, caseworkerAnalysis: CaseworkerAnalysis, supervisorFeedback: string, supervisorAnalysis: SupervisorAnalysis}) => void;
 }) => {
-    type Stage = 'self-assessment' | 'caseworker-analysis' | 'caseworker-analysis-complete' | 'supervisor-review' | 'supervisor-analysis' | 'supervisor-analysis-complete' | 'final';
+    type Stage = 'self-assessment' | 'caseworker-analysis' | 'caseworker-analysis-complete' | 'final';
     const [stage, setStage] = useState<Stage>('self-assessment');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -561,6 +562,8 @@ const ReviewPage = ({
     const [isStreaming, setIsStreaming] = useState(false);
     const [isThinking, setIsThinking] = useState(false);
     const [thinkingComplete, setThinkingComplete] = useState(false);
+    const [savedThinkingContent, setSavedThinkingContent] = useState<string[]>([]);
+    const [savedResponseContent, setSavedResponseContent] = useState<string>('');
 
     // Scroll to top when component mounts (when starting self-assessment)
     useEffect(() => {
@@ -572,6 +575,14 @@ const ReviewPage = ({
         const randomExample = SELF_ASSESSMENT_EXAMPLES[Math.floor(Math.random() * SELF_ASSESSMENT_EXAMPLES.length)];
         setSelfAssessment(randomExample.assessment);
         setHasPrefilled(true);
+        
+        // Auto-scroll to bottom after a brief delay to ensure state updates
+        setTimeout(() => {
+            window.scrollTo({
+                top: document.documentElement.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 100);
     };
 
     const handleSelfAssessmentSubmit = async (e: React.FormEvent) => {
@@ -593,6 +604,36 @@ const ReviewPage = ({
                     if (metadata) {
                         setIsThinking(metadata.isThinking || false);
                         setThinkingComplete(metadata.thinkingComplete || false);
+                        
+                        // Extract and save thinking content and response when thinking is complete
+                        if (metadata.thinkingComplete && text.includes('THINKING_COMPLETE')) {
+                            const parts = text.split('THINKING_COMPLETE');
+                            if (parts.length >= 2) {
+                                // Extract thinking content
+                                const thinkingPart = parts[0].trim();
+                                if (thinkingPart) {
+                                    const thinkingParts = thinkingPart.split(/THINKING:/);
+                                    const thinkingSections: string[] = [];
+                                    
+                                    for (let i = 1; i < thinkingParts.length; i++) {
+                                        const section = thinkingParts[i].trim();
+                                        if (section) {
+                                            thinkingSections.push(section);
+                                        }
+                                    }
+                                    
+                                    if (thinkingSections.length > 0) {
+                                        setSavedThinkingContent(thinkingSections);
+                                    }
+                                }
+                                
+                                // Extract response content (everything after THINKING_COMPLETE)
+                                const responsePart = parts.slice(1).join('THINKING_COMPLETE').trim();
+                                if (responsePart) {
+                                    setSavedResponseContent(responsePart);
+                                }
+                            }
+                        }
                     }
                 }
             );
@@ -600,59 +641,73 @@ const ReviewPage = ({
             setIsStreaming(false);
             setStage('caseworker-analysis-complete');
             
-            // Brief pause before transitioning to final view
-            setTimeout(() => {
-                setStage('supervisor-review');
-            }, 1500);
+            // Transition directly to final view if analysis was successful
+            if (analysis) {
+                // Brief pause before transitioning to final view
+                setTimeout(() => {
+                    setStage('final');
+                }, 1500);
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error');
-            setStage('self-assessment');
+            // Don't reset stage - stay on current view to show error with thinking box
         } finally {
             setIsLoading(false);
             setIsStreaming(false);
         }
     };
 
-    const handleSupervisorSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setError(null);
-        setStreamingText('');
-        setIsStreaming(true);
-        setStage('supervisor-analysis');
-        
-        try {
-            const analysis = await analyzeSupervisorCoaching(
-                supervisorFeedback, 
-                simulationTranscript,
-                (text) => {
-                    setStreamingText(text);
-                }
-            );
-            setSupervisorAnalysis(analysis);
-            setIsStreaming(false);
-            setStage('supervisor-analysis-complete');
-            
-            // Brief pause before transitioning to final view
-            setTimeout(() => {
-                setStage('final');
-            }, 1500);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unknown error');
-            setStage('supervisor-review');
-        } finally {
-            setIsLoading(false);
-            setIsStreaming(false);
-        }
-    };
 
-    if (error) return <div className="bg-red-100 text-red-700 p-4 rounded-md">Error: {error}</div>
+    // Don't return early on error - show error along with thinking box for debugging
 
     const renderContent = () => {
+        // Only show error display if there's an actual error and we're in an analysis stage
+        if (error && (stage === 'caseworker-analysis' || stage === 'caseworker-analysis-complete')) {
+            return (
+                <div className="space-y-4">
+                    <div className="bg-red-100 text-red-700 p-4 rounded-md border border-red-300">
+                        <h3 className="font-semibold mb-2">Error</h3>
+                        <p>{error}</p>
+                    </div>
+                    
+                    {/* Still show thinking box if available - helpful for debugging */}
+                    {(savedThinkingContent.length > 0 || savedResponseContent) && (
+                        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-slate-200">
+                            <div className="flex items-center gap-3 mb-4">
+                                <SparklesIcon className="w-8 h-8 text-blue-600" />
+                                <h2 className="text-2xl font-bold text-slate-800">AI Processing Log</h2>
+                            </div>
+                            <ThinkingBox 
+                                thinkingContent={savedThinkingContent}
+                                responseContent={savedResponseContent}
+                                isThinkingComplete={true}
+                                initialExpanded={true}
+                            />
+                            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                <p className="text-amber-700 text-sm">
+                                    The analysis failed, but the AI's thinking process above may help identify the issue.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <button 
+                        onClick={() => {
+                            setError(null);
+                            setStage('self-assessment');
+                        }}
+                        className="btn-secondary"
+                    >
+                        Try Again
+                    </button>
+                </div>
+            );
+        }
+        
         switch(stage) {
             case 'self-assessment':
                 return (
-                    <form onSubmit={handleSelfAssessmentSubmit} className="space-y-6 bg-white p-8 rounded-2xl shadow-lg border border-slate-200 relative">
+                    <form onSubmit={handleSelfAssessmentSubmit} className="self-assessment-form">
                         {!hasPrefilled && Object.keys(selfAssessment).length === 0 && (
                             <button
                                 type="button"
@@ -669,22 +724,32 @@ const ReviewPage = ({
                                 <span>Prefill Example</span>
                             </button>
                         )}
-                        <h3 className="text-2xl font-bold text-slate-800">Post-Simulation Self-Assessment</h3>
-                        <p className="text-slate-600">Reflect on your performance during the simulation based on the core criteria.</p>
-                        {ASSESSMENT_CRITERIA.map(c => (
-                            <div key={c.key}>
-                                <p className="text-sm text-slate-500 mb-2">{c.description}</p>
-                                <textarea
-                                    id={c.key}
-                                    rows={3}
-                                    required
-                                    value={selfAssessment[c.key] || ''}
-                                    className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    onChange={e => setSelfAssessment(s => ({ ...s, [c.key]: e.target.value }))}
-                                />
-                            </div>
-                        ))}
-                        <button type="submit" className="btn-glossy-blue w-full">Submit for AI analysis</button>
+                        <h3 className="assessment-title">Post-Simulation Self-Assessment</h3>
+                        <p className="assessment-subtitle">Reflect on your performance during the simulation based on the core criteria.</p>
+                        <div className="assessment-criteria-container">
+                            {ASSESSMENT_CRITERIA.map(c => (
+                                <div key={c.key} className="assessment-criterion">
+                                    <label className="criterion-label" htmlFor={c.key}>
+                                        {c.title}
+                                    </label>
+                                    <p className="criterion-description">{c.description}</p>
+                                    <textarea
+                                        id={c.key}
+                                        rows={3}
+                                        required
+                                        value={selfAssessment[c.key] || ''}
+                                        className="criterion-textarea"
+                                        onChange={e => setSelfAssessment(s => ({ ...s, [c.key]: e.target.value }))}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="assessment-submit-container">
+                            <button type="submit" className="btn-submit-assessment">
+                                <SparklesIcon className="w-5 h-5" />
+                                Submit for AI analysis
+                            </button>
+                        </div>
                     </form>
                 );
             case 'caseworker-analysis':
@@ -697,45 +762,15 @@ const ReviewPage = ({
                         thinkingComplete={thinkingComplete}
                     />
                 );
-            case 'supervisor-analysis':
-            case 'supervisor-analysis-complete':
-                return (
-                    <StreamingAnalysisDisplay 
-                        streamingText={streamingText}
-                        isComplete={stage === 'supervisor-analysis-complete'}
-                    />
-                );
-            case 'supervisor-review':
             case 'final':
                 return (
-                    <div className="space-y-8">
+                    <div>
                         {caseworkerAnalysis && (
-                            <AnalysisDisplay analysis={caseworkerAnalysis} />
-                        )}
-                        {stage === 'supervisor-review' && (
-                            <form onSubmit={handleSupervisorSubmit} className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
-                                <h3 className="text-xl font-bold text-slate-800">Supervisor Review & Coaching</h3>
-                                <p className="text-slate-600 text-sm mb-4">Provide strength-based feedback and constructive criticism for the caseworker.</p>
-                                <textarea
-                                    rows={5}
-                                    required
-                                    value={supervisorFeedback}
-                                    onChange={e => setSupervisorFeedback(e.target.value)}
-                                    className="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="e.g., 'You did a great job building rapport by... Next time, try asking more open-ended questions like...'"
-                                />
-                                <button type="submit" className="w-full mt-4 px-6 py-3 text-white bg-blue-600 rounded-md hover:bg-blue-700 font-semibold">Submit Feedback</button>
-                            </form>
-                        )}
-                        {supervisorAnalysis && (
-                             <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
-                                <h3 className="text-xl font-bold text-slate-800 mb-4">AI Analysis of Supervisor's Coaching</h3>
-                                <div className="space-y-4 text-sm">
-                                    <p><strong>Feedback on Strengths:</strong> {supervisorAnalysis.feedbackOnStrengths}</p>
-                                    <p><strong>Feedback on Critique:</strong> {supervisorAnalysis.feedbackOnCritique}</p>
-                                    <p><strong>Overall Tone:</strong> <span className="font-semibold text-blue-600">{supervisorAnalysis.overallTone}</span></p>
-                                </div>
-                             </div>
+                            <AnalysisDisplay 
+                                analysis={caseworkerAnalysis} 
+                                thinkingContent={savedThinkingContent}
+                                responseContent={savedResponseContent}
+                            />
                         )}
                     </div>
                 );

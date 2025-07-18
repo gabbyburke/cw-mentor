@@ -70,3 +70,7 @@ export const ChevronDownIcon = ({ className, style }: { className?: string; styl
 export const ChevronUpIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <GoogleIcon name="expand_less" className={className} style={style} />
 );
+
+export const XCircleIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="cancel" className={className} style={style} />
+);

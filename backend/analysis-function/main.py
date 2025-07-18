@@ -189,16 +189,17 @@ def handle_analysis(request_json, headers):
 Analyze this social work parent interview transcript step by step:
 1. Review each interaction and identify key behaviors
 2. Match behaviors to the assessment criteria
-3. Identify which training materials from the curriculum would be relevant
-4. Plan what citations to include based on best practices
+3. Consider which training materials from the curriculum would be relevant
+4. Focus on providing specific, actionable feedback
 </thinking>
 
 You are an expert social work educator analyzing a parent interview transcript. Use the Arkansas child welfare training materials and best practices to provide feedback.
 
-IMPORTANT CITATION RULES:
-1. When referencing curriculum/training materials, use citation markers [1], [2], etc.
-2. When referencing specific quotes from the transcript to support your analysis, use transcript citation markers [T1], [T2], etc.
-3. Every claim or observation about the worker's performance should be supported by either a transcript citation [T#] or curriculum citation [#].
+IMPORTANT INSTRUCTIONS:
+1. Focus on clear, specific feedback that references best practices
+2. ACTIVELY USE AND REFERENCE the Arkansas child welfare training materials from the curriculum datastore to ground your feedback in established best practices
+3. Include transcript citations [T1], [T2], etc. when quoting from the transcript
+4. DO NOT add curriculum or training material citation markers (like [1], [2], etc.) - these will be added automatically by the system based on the actual training materials referenced
 
 Analyze this social work parent interview transcript against these key criteria:
 1. Introduction & Identification - Did worker properly introduce themselves and verify parent identity?
@@ -216,37 +217,56 @@ Self-Assessment:
 
 Provide constructive, encouraging feedback grounded in the training materials. Focus on specific behaviors and actionable improvements.
 
-Respond with JSON in this exact format:
+EXAMPLE OF A GREAT RESPONSE:
 {{
-  "overallSummary": "Brief encouraging overview of performance with citations [T#] and [#]",
-  "strengths": ["Specific strength 1 with citation [T#]", "Specific strength 2 with citation [T#]"],
+  "overallSummary": "Your self-reflection demonstrates excellent professional insight and a commitment to continuous improvement. While this interaction presented challenges, your ability to recognize areas for growth is a valuable asset in social work practice. The following feedback aims to build on your strengths while providing concrete strategies based on Arkansas child welfare best practices.",
+  "strengths": [
+    "Demonstrated strong self-awareness by recognizing the confrontational approach and its impact on the parent's defensiveness",
+    "Showed persistence in attempting to address child safety concerns despite the challenging interaction"
+  ],
   "areasForImprovement": [
-    {{"area": "Area name", "suggestion": "Specific actionable suggestion with citations [T#] and/or [#]"}},
-    {{"area": "Area name", "suggestion": "Specific actionable suggestion with citations [T#] and/or [#]"}}
+    {{
+      "area": "Professional Introduction",
+      "suggestion": "Begin every interaction with a complete introduction including your full name, specific agency division, and immediate presentation of identification. This establishes credibility and shows respect for the parent's need to verify your authority."
+    }},
+    {{
+      "area": "De-escalation Techniques",
+      "suggestion": "When parents become defensive, acknowledge their emotions first before proceeding. Use phrases like 'I understand this is unexpected and concerning for you' to validate their feelings while maintaining focus on child safety."
+    }}
   ],
   "criteriaAnalysis": [
-    {{"criterion": "Introduction & Identification", "met": true, "score": "Good", "evidence": "Direct quote from transcript", "feedback": "Specific feedback with citations [T#] and/or [#]"}},
-    {{"criterion": "Reason for Contact", "met": false, "score": "Needs Improvement", "evidence": "Direct quote or 'Not demonstrated'", "feedback": "Specific feedback with citations [T#] and/or [#]"}},
-    {{"criterion": "Responsive to Parent", "met": true, "score": "Excellent", "evidence": "Direct quote", "feedback": "Specific feedback with citations [T#] and/or [#]"}},
-    {{"criterion": "Permission to Enter", "met": false, "score": "Not Demonstrated", "evidence": "Not demonstrated", "feedback": "Specific feedback with citations [T#] and/or [#]"}},
-    {{"criterion": "Information Gathering", "met": false, "score": "Needs Improvement", "evidence": "Direct quote or 'Not demonstrated'", "feedback": "Specific feedback with citations [T#] and/or [#]"}},
-    {{"criterion": "Process & Next Steps", "met": false, "score": "Not Demonstrated", "evidence": "Not demonstrated", "feedback": "Specific feedback with citations [T#] and/or [#]"}}
+    {{
+      "criterion": "Introduction & Identification",
+      "met": false,
+      "score": "Needs Improvement",
+      "evidence": "Hi, I'm from CPS. We got a call about your kids.",
+      "feedback": "The introduction lacked essential elements including your full name, specific role, and proactive presentation of identification. Best practice requires a complete professional introduction to establish trust and legitimacy from the first moment of contact."
+    }},
+    {{
+      "criterion": "Reason for Contact",
+      "met": true,
+      "score": "Good",
+      "evidence": "We got a call about your kids. I need to come in and look around.",
+      "feedback": "While you did state there was a call about the children, the explanation could be more specific about the nature of concerns while remaining non-accusatory. Consider framing it as 'We received a report expressing concern for your children's safety, and I'm here to talk with you about that.'"
+    }}
   ],
   "transcriptCitations": [
     {{
       "number": 1,
       "marker": "[T1]",
-      "quote": "Exact quote from the transcript that supports analysis",
-      "speaker": "user or model"
+      "quote": "Hi, I'm from CPS. We got a call about your kids. I need to come in and look around.",
+      "speaker": "user"
     }},
     {{
       "number": 2,
       "marker": "[T2]",
-      "quote": "Another exact quote from the transcript",
-      "speaker": "user or model"
+      "quote": "What? Who are you? Do you have some ID? What call?",
+      "speaker": "model"
     }}
   ]
 }}
+
+Respond with JSON in this exact format. Do not include any text outside the JSON structure.
 """
         
         # Build content for analysis
@@ -293,8 +313,10 @@ Respond with JSON in this exact format:
             """Generator function for streaming response"""
             thinking_complete = False
             final_text_buffer = []
-            grounding_metadata = None
+            all_grounding_chunks = []  # Accumulate all grounding chunks
+            chunk_grounding_map = []  # Map text chunks to their grounding
             full_response = ""
+            current_chunk_index = 0
             
             try:
                 # Stream the response from the model
@@ -303,14 +325,55 @@ Respond with JSON in this exact format:
                     contents=contents,
                     config=config
                 ):
+                    current_chunk_index += 1
+                    
                     if not chunk.candidates or not chunk.candidates[0].content:
+                        logging.debug(f"Chunk {current_chunk_index}: No candidates or content")
                         continue
                     
-                    # Capture grounding metadata from streaming chunks
-                    if hasattr(chunk.candidates[0], 'grounding_metadata') and chunk.candidates[0].grounding_metadata:
-                        grounding_metadata = chunk.candidates[0].grounding_metadata
-                        if hasattr(grounding_metadata, 'grounding_chunks') and grounding_metadata.grounding_chunks:
-                            logging.info(f"Grounding metadata captured - {len(grounding_metadata.grounding_chunks)} chunks")
+                    # Debug logging for chunk attributes
+                    if current_chunk_index <= 3:  # Log first few chunks in detail
+                        logging.info(f"Chunk {current_chunk_index} attributes: {dir(chunk.candidates[0])}")
+                    
+                    # Capture grounding metadata for this chunk
+                    chunk_grounding = []
+                    if hasattr(chunk.candidates[0], 'grounding_metadata'):
+                        if chunk.candidates[0].grounding_metadata:
+                            grounding_metadata = chunk.candidates[0].grounding_metadata
+                            logging.info(f"Chunk {current_chunk_index}: Has grounding_metadata")
+                            
+                            if hasattr(grounding_metadata, 'grounding_chunks') and grounding_metadata.grounding_chunks:
+                                logging.info(f"Chunk {current_chunk_index}: {len(grounding_metadata.grounding_chunks)} grounding chunks found")
+                                
+                                # Process grounding chunks for this text chunk
+                                for g_idx, g_chunk in enumerate(grounding_metadata.grounding_chunks):
+                                    if g_chunk.retrieved_context:
+                                        ctx = g_chunk.retrieved_context
+                                        grounding_info = {
+                                            "source": ctx.title if ctx.title else "Training Material",
+                                            "text": ctx.text if ctx.text else "",
+                                            "uri": ctx.uri if ctx.uri else ""
+                                        }
+                                        
+                                        # Extract page span if available
+                                        if hasattr(ctx, 'rag_chunk') and ctx.rag_chunk:
+                                            rag_chunk = ctx.rag_chunk
+                                            if hasattr(rag_chunk, 'page_span') and rag_chunk.page_span:
+                                                grounding_info["pages"] = f"Pages {rag_chunk.page_span.first_page}-{rag_chunk.page_span.last_page}"
+                                        
+                                        chunk_grounding.append(grounding_info)
+                                        logging.debug(f"  Grounding {g_idx}: {grounding_info['source'][:50]}...")
+                                        
+                                        # Add to all chunks if not already present
+                                        if not any(g['uri'] == grounding_info['uri'] and g['text'] == grounding_info['text'] for g in all_grounding_chunks):
+                                            all_grounding_chunks.append(grounding_info)
+                            else:
+                                logging.info(f"Chunk {current_chunk_index}: grounding_metadata has no grounding_chunks")
+                        else:
+                            logging.debug(f"Chunk {current_chunk_index}: grounding_metadata is None")
+                    else:
+                        if current_chunk_index <= 10:  # Log first 10 chunks
+                            logging.info(f"Chunk {current_chunk_index}: No grounding_metadata attribute")
                     
                     # Process parts
                     if chunk.candidates[0].content.parts:
@@ -368,29 +431,24 @@ Respond with JSON in this exact format:
                     analysis = json.loads(json_text)
                     logging.info("JSON parsing successful")
                     
-                    # Process citations from captured grounding metadata (single-pass approach)
+                    # Process accumulated grounding chunks into citations
                     citations = []
-                    if grounding_metadata and hasattr(grounding_metadata, 'grounding_chunks') and grounding_metadata.grounding_chunks:
-                        for idx, chunk in enumerate(grounding_metadata.grounding_chunks):
-                            if chunk.retrieved_context:
-                                ctx = chunk.retrieved_context
-                                citation = {
-                                    "number": idx + 1,
-                                    "marker": f"[{idx + 1}]",
-                                    "source": ctx.title if ctx.title else "Training Material",
-                                    "text": ctx.text if ctx.text else "",  # Full text, not truncated
-                                    "uri": ctx.uri if ctx.uri else ""
-                                }
-                                
-                                # Extract page span if available
-                                if hasattr(ctx, 'rag_chunk') and ctx.rag_chunk:
-                                    rag_chunk = ctx.rag_chunk
-                                    if hasattr(rag_chunk, 'page_span') and rag_chunk.page_span:
-                                        citation["pages"] = f"Pages {rag_chunk.page_span.first_page}-{rag_chunk.page_span.last_page}"
-                                
-                                citations.append(citation)
+                    logging.info(f"Processing {len(all_grounding_chunks)} accumulated grounding chunks")
+                    
+                    for idx, grounding in enumerate(all_grounding_chunks):
+                        citation = {
+                            "number": idx + 1,
+                            "marker": f"[{idx + 1}]",
+                            "source": grounding["source"],
+                            "text": grounding["text"],
+                            "uri": grounding["uri"]
+                        }
+                        if "pages" in grounding:
+                            citation["pages"] = grounding["pages"]
                         
-                        logging.info(f"Extracted {len(citations)} citations from grounding metadata (single-pass)")
+                        citations.append(citation)
+                    
+                    logging.info(f"Created {len(citations)} citations from accumulated grounding chunks")
                     
                     # Add citations to analysis
                     analysis["citations"] = citations
@@ -419,63 +477,3 @@ Respond with JSON in this exact format:
     except Exception as e:
         logging.exception(f"Error in handle_analysis: {str(e)}")
         return (jsonify({'error': f'Analysis failed: {str(e)}'}), 500, headers)
-
-
-def add_citations_with_llm(analysis: Dict, grounding_chunks: List[Dict]) -> Dict:
-    """Use LLM to add citation markers to the analysis based on grounding chunks."""
-    try:
-        # Create a prompt for the LLM to add citations
-        citation_prompt = f"""
-Given this analysis JSON and these grounding chunks from training materials, add citation markers [1], [2], etc. 
-where the analysis references concepts from the chunks.
-
-Analysis to update:
-{json.dumps(analysis, indent=2)}
-
-Grounding chunks used by the AI:
-"""
-        for chunk in grounding_chunks:
-            # Include full text without truncation
-            citation_prompt += f"\n[{chunk['citation_num']}]: {chunk['text']}"
-        
-        citation_prompt += """
-
-Instructions:
-1. Add citation markers [1], [2], etc. in the text where concepts from the grounding chunks are referenced
-2. Only add citations where there's a clear connection to the chunk content
-3. Return the complete updated JSON with citation markers added
-4. Keep all existing [T#] transcript citations as they are
-5. Respond with ONLY the JSON, no other text
-"""
-        
-        # Call LLM to add citations
-        contents = [types.Content(
-            role="user",
-            parts=[types.Part(text=citation_prompt)]
-        )]
-        
-        config = types.GenerateContentConfig(
-            temperature=0.1,  # Low temperature for consistency
-            max_output_tokens=8192,
-            response_mime_type="application/json"  # Force JSON response
-        )
-        
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=contents,
-            config=config
-        )
-        
-        if response.candidates and response.candidates[0].content and response.candidates[0].content.parts:
-            response_text = response.candidates[0].content.parts[0].text
-            updated_analysis = json.loads(response_text)
-            logging.info("Successfully added citations to analysis")
-            return updated_analysis
-        else:
-            logging.warning("No response from citation addition, returning original")
-            return analysis
-            
-    except Exception as e:
-        logging.error(f"Error adding citations with LLM: {e}")
-        # Return original analysis on error
-        return analysis

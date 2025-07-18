@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { SparklesIcon, ChevronDownIcon, ChevronUpIcon } from '../utils/icons';
+import { SparklesIcon } from '../utils/icons';
+import ThinkingBox from './ThinkingBox';
 
 interface StreamingAnalysisDisplayProps {
   streamingText: string;
@@ -16,7 +17,6 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
 }) => {
   const [thinkingContent, setThinkingContent] = useState<string[]>([]);
   const [finalContent, setFinalContent] = useState('');
-  const [isThinkingExpanded, setIsThinkingExpanded] = useState(false);
   
   // Add shimmer animation style
   useEffect(() => {
@@ -52,8 +52,43 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
       if (thinkingSections.length > 0) {
         setThinkingContent(thinkingSections);
       }
-    } else if (thinkingComplete || !isThinking) {
-      // This is final content
+    } 
+    
+    // Process final content when thinking is complete
+    // Important: Don't clear thinking content when final content arrives
+    if (thinkingComplete && streamingText) {
+      // When thinking is complete, the streamingText contains both thinking and final content
+      // separated by THINKING_COMPLETE marker
+      const parts = streamingText.split('THINKING_COMPLETE');
+      
+      if (parts.length >= 2) {
+        // Extract thinking content if not already set
+        const thinkingPart = parts[0].trim();
+        if (thinkingPart) {
+          const thinkingParts = thinkingPart.split(/THINKING:/);
+          const thinkingSections: string[] = [];
+          
+          for (let i = 1; i < thinkingParts.length; i++) {
+            const section = thinkingParts[i].trim();
+            if (section) {
+              thinkingSections.push(section);
+            }
+          }
+          
+          if (thinkingSections.length > 0) {
+            setThinkingContent(thinkingSections);
+          }
+        }
+        
+        // Extract final content (everything after THINKING_COMPLETE)
+        const finalPart = parts.slice(1).join('THINKING_COMPLETE').trim();
+        setFinalContent(finalPart);
+      } else {
+        // Fallback: treat entire content as final if no THINKING_COMPLETE marker
+        setFinalContent(streamingText);
+      }
+    } else if (!isThinking && streamingText) {
+      // If we're not in thinking mode at all, just set the final content
       setFinalContent(streamingText);
     }
   }, [streamingText, isThinking, thinkingComplete]);
@@ -71,137 +106,12 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
       </div>
       
       {/* Thinking Section */}
-      {showThinking && (
-        <div className={`mb-6 transition-all duration-300 ${thinkingComplete ? 'opacity-60' : 'opacity-100'}`}
-          style={{
-            background: 'linear-gradient(135deg, rgba(249, 250, 251, 0.95) 0%, rgba(243, 244, 246, 0.95) 100%)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            border: '1px solid rgba(209, 213, 219, 0.5)',
-            borderRadius: '16px',
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.9)',
-            overflow: 'hidden'
-          }}>
-          <button
-            type="button"
-            onClick={() => setIsThinkingExpanded(!isThinkingExpanded)}
-            className="w-full p-5 flex items-center justify-between text-left transition-all duration-200"
-            style={{
-              background: 'transparent',
-              borderRadius: '16px 16px 0 0'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(229, 231, 235, 0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex gap-1.5">
-                <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse"></div>
-                <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse" style={{animationDelay: '150ms'}}></div>
-                <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full animate-pulse" style={{animationDelay: '300ms'}}></div>
-              </div>
-              <span className="text-sm font-semibold" style={{ color: '#374151' }}>AI Thinking Process</span>
-            </div>
-            {isThinkingExpanded ? (
-              <ChevronUpIcon className="w-5 h-5 text-slate-600" />
-            ) : (
-              <ChevronDownIcon className="w-5 h-5 text-slate-600" />
-            )}
-          </button>
-          
-          <div className={`px-6 pb-5 overflow-hidden transition-all duration-300 ${isThinkingExpanded ? 'max-h-96 overflow-y-auto' : 'max-h-16'}`}>
-            {isThinkingExpanded ? (
-              <div className="space-y-3">
-                {thinkingContent.map((chunk, index) => {
-                  // Parse markdown-style bold text
-                  const formattedChunk = chunk.split('\n').map((line, lineIndex) => {
-                    // Replace **text** with bold spans
-                    const parts = line.split(/(\*\*[^*]+\*\*)/g);
-                    return (
-                      <span key={lineIndex}>
-                        {parts.map((part, partIndex) => {
-                          if (part.startsWith('**') && part.endsWith('**')) {
-                            return (
-                              <strong key={partIndex} className="font-semibold text-slate-800">
-                                {part.slice(2, -2)}
-                              </strong>
-                            );
-                          }
-                          return part;
-                        })}
-                        {lineIndex < chunk.split('\n').length - 1 && <br />}
-                      </span>
-                    );
-                  });
-                  
-                  return (
-                    <div 
-                      key={index} 
-                      className="p-3 bg-white bg-opacity-60 rounded-lg border border-gray-200"
-                      style={{
-                        fontSize: '13px',
-                        lineHeight: '1.6',
-                        color: '#334155' // slate-700
-                      }}
-                    >
-                      {formattedChunk}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p style={{ 
-                color: '#374151', 
-                padding: '4px 24px 12px 24px',
-                fontSize: '13px',
-                fontWeight: '500',
-                margin: 0
-              }}>
-                {thinkingContent.length > 0 ? (
-                  <>
-                    {(() => {
-                      const latestContent = thinkingContent[thinkingContent.length - 1].split('\n')[0];
-                      // Strip markdown bold markers
-                      const cleanContent = latestContent.replace(/\*\*/g, '');
-                      return `${cleanContent.substring(0, 60)}...`;
-                    })()}
-                  </>
-                ) : (
-                  'AI is analyzing...'
-                )}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+      <ThinkingBox 
+        thinkingContent={thinkingContent}
+        responseContent={finalContent}
+        isThinkingComplete={thinkingComplete}
+      />
       
-      {/* Progress indicator */}
-      {!isComplete && !showThinking && (
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="flex gap-1">
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
-            </div>
-            <span className="text-sm text-slate-600">
-              Processing...
-            </span>
-          </div>
-          <div className="w-full bg-slate-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-500 ease-out"
-              style={{
-                width: '25%',
-                animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-              }}
-            ></div>
-          </div>
-        </div>
-      )}
       
       {/* Prettier progress bar when thinking complete */}
       {!isComplete && thinkingComplete && (

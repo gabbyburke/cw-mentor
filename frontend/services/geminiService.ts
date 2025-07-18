@@ -149,7 +149,9 @@ async function callCloudFunctionForAnalysis(
             onStreamUpdate(streamingText, { isThinking: true, thinkingComplete: false });
           }
         } else if (thinkingComplete && finalText) {
-          streamingText = finalText;
+          // When thinking is complete, we want to preserve both thinking and final content
+          // The component will handle separating them based on the metadata
+          streamingText = thinkingText + '\n\nTHINKING_COMPLETE\n\n' + finalText;
           if (onStreamUpdate) {
             onStreamUpdate(streamingText, { isThinking: false, thinkingComplete: true });
           }

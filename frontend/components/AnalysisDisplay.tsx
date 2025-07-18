@@ -1,10 +1,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import type { CaseworkerAnalysis, TranscriptCitation, CurriculumCitation } from '../types/types';
-import { CheckCircleIcon, LightbulbIcon, SparklesIcon } from '../utils/icons';
+import { CheckCircleIcon, LightbulbIcon, SparklesIcon, XCircleIcon } from '../utils/icons';
+import ThinkingBox from './ThinkingBox';
 
 interface AnalysisDisplayProps {
   analysis: CaseworkerAnalysis;
+  thinkingContent?: string[];
+  responseContent?: string;
 }
 
 interface TooltipPosition {
@@ -12,7 +15,7 @@ interface TooltipPosition {
   left: number;
 }
 
-const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
+const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingContent = [], responseContent }) => {
   const [hoveredCitation, setHoveredCitation] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ top: 0, left: 0 });
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -74,10 +77,11 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
   
   // Function to parse text and replace citation markers with interactive elements
   const renderTextWithCitations = (text: string) => {
-    const citationRegex = /\[([T]?\d+)\]/g;
-    const parts = [];
+    // Updated regex to match both single citations [1] and multiple citations [1, 2, 3]
+    const citationRegex = /\[([T]?\d+(?:,\s*[T]?\d+)*)\]/g;
+    const parts: React.ReactNode[] = [];
     let lastIndex = 0;
-    let match;
+    let match: RegExpExecArray | null;
     
     while ((match = citationRegex.exec(text)) !== null) {
       // Add text before citation
@@ -85,23 +89,40 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
         parts.push(text.substring(lastIndex, match.index));
       }
       
-      // Add citation as interactive element
-      const citationMarker = match[1];
-      const isTranscript = citationMarker.includes('T');
+      // Handle multiple citations in one bracket
+      const citationGroup = match[1];
+      const citations = citationGroup.split(',').map(c => c.trim());
+      
+      // Create a span for each citation
+      const matchIndex = match.index;
+      const citationElements = citations.map((citationMarker, idx) => {
+        const isTranscript = citationMarker.includes('T');
+        return (
+          <React.Fragment key={`${matchIndex}-${idx}`}>
+            {idx > 0 && <span className="mx-0.5">,</span>}
+            <span
+              data-citation={citationMarker}
+              className={`inline-flex items-center justify-center w-6 h-6 text-xs rounded-full cursor-pointer transition-all relative ${
+                isTranscript 
+                  ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' 
+                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              }`}
+              onMouseEnter={(e) => handleMouseEnter(e, citationMarker)}
+              onMouseLeave={() => setHoveredCitation(null)}
+              style={{ fontWeight: 600 }}
+            >
+              {citationMarker.replace('T', '')}
+            </span>
+          </React.Fragment>
+        );
+      });
+      
+      // Wrap multiple citations in a bracket-style container
       parts.push(
-        <span
-          key={match.index}
-          data-citation={citationMarker}
-          className={`inline-flex items-center justify-center w-6 h-6 text-xs rounded-full cursor-pointer transition-all relative ${
-            isTranscript 
-              ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' 
-              : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-          }`}
-          onMouseEnter={(e) => handleMouseEnter(e, citationMarker)}
-          onMouseLeave={() => setHoveredCitation(null)}
-          style={{ fontWeight: 600 }}
-        >
-          {citationMarker.replace('T', '')}
+        <span key={matchIndex} className="inline-flex items-center">
+          <span className="text-gray-600">[</span>
+          {citationElements}
+          <span className="text-gray-600">]</span>
         </span>
       );
       
@@ -186,6 +207,13 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
         <h2 className="text-2xl font-bold text-slate-800">Feedback Analysis</h2>
       </div>
       
+      {/* AI Thinking Process */}
+      <ThinkingBox 
+        thinkingContent={thinkingContent}
+        responseContent={responseContent}
+        isThinkingComplete={true}
+      />
+      
       <div className="mb-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
         <h3 className="text-lg font-semibold text-blue-800 mb-2">Overall Summary</h3>
         <p className="text-blue-700">{renderTextWithCitations(analysis.overallSummary)}</p>
@@ -219,6 +247,52 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
           </ul>
         </div>
       </div>
+
+      {/* Criteria Analysis Table */}
+      {analysis.criteriaAnalysis && analysis.criteriaAnalysis.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Criteria Assessment</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-semibold text-gray-700">Criterion</th>
+                  <th className="border border-gray-200 px-4 py-3 text-center text-sm font-semibold text-gray-700 w-24">Status</th>
+                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-semibold text-gray-700">Evidence</th>
+                  <th className="border border-gray-200 px-4 py-3 text-left text-sm font-semibold text-gray-700">Feedback</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analysis.criteriaAnalysis.map((criterion, index) => (
+                  <tr key={index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="border border-gray-200 px-4 py-3 text-sm font-medium text-gray-800">
+                      {criterion.criterion}
+                    </td>
+                    <td className="border border-gray-200 px-4 py-3 text-center">
+                      {criterion.met ? (
+                        <CheckCircleIcon className="w-6 h-6 text-green-600 mx-auto" />
+                      ) : (
+                        <XCircleIcon className="w-6 h-6 text-red-600 mx-auto" />
+                      )}
+                      <div className="text-xs mt-1 text-gray-600">{criterion.score}</div>
+                    </td>
+                    <td className="border border-gray-200 px-4 py-3 text-sm text-gray-700">
+                      <div className="max-w-xs">
+                        {renderTextWithCitations(criterion.evidence)}
+                      </div>
+                    </td>
+                    <td className="border border-gray-200 px-4 py-3 text-sm text-gray-700">
+                      <div className="max-w-md">
+                        {renderTextWithCitations(criterion.feedback)}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Citations Section */}
       {(analysis.transcriptCitations || analysis.citations) && (
