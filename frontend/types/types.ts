@@ -20,6 +20,21 @@ export interface CriterionAnalysis {
   feedback: string;
 }
 
+export interface TranscriptCitation {
+  number: number;
+  marker: string;
+  quote: string;
+  speaker: string;
+}
+
+export interface CurriculumCitation {
+  number: number;
+  source: string;
+  text: string;
+  uri: string;
+  pages?: string;
+}
+
 export interface CaseworkerAnalysis {
   overallSummary: string;
   strengths: string[];
@@ -28,6 +43,8 @@ export interface CaseworkerAnalysis {
     suggestion: string;
   }[];
   criteriaAnalysis?: CriterionAnalysis[];
+  transcriptCitations?: TranscriptCitation[];
+  citations?: CurriculumCitation[];
 }
 
 export interface SupervisorAnalysis {

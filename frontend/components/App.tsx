@@ -8,6 +8,8 @@ import {
     MagicWandIcon
 } from '../utils/icons';
 import SplashScreen from './SplashScreen';
+import StreamingAnalysisDisplay from './StreamingAnalysisDisplay';
+import AnalysisDisplay from './AnalysisDisplay';
 
 
 //region --- UI Components ---
@@ -533,7 +535,7 @@ const ReviewPage = ({
     simulationTranscript: Message[];
     onComplete: (data: {selfAssessment: SelfAssessment, caseworkerAnalysis: CaseworkerAnalysis, supervisorFeedback: string, supervisorAnalysis: SupervisorAnalysis}) => void;
 }) => {
-    type Stage = 'self-assessment' | 'caseworker-analysis' | 'supervisor-review' | 'supervisor-analysis' | 'final';
+    type Stage = 'self-assessment' | 'caseworker-analysis' | 'caseworker-analysis-complete' | 'supervisor-review' | 'supervisor-analysis' | 'supervisor-analysis-complete' | 'final';
     const [stage, setStage] = useState<Stage>('self-assessment');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -543,6 +545,15 @@ const ReviewPage = ({
     const [supervisorFeedback, setSupervisorFeedback] = useState('');
     const [supervisorAnalysis, setSupervisorAnalysis] = useState<SupervisorAnalysis | null>(null);
     const [hasPrefilled, setHasPrefilled] = useState(false);
+    
+    // Streaming state
+    const [streamingText, setStreamingText] = useState('');
+    const [isStreaming, setIsStreaming] = useState(false);
+
+    // Scroll to top when component mounts (when starting self-assessment)
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     const handlePrefillSelfAssessment = () => {
         // Select a random example
@@ -555,14 +566,32 @@ const ReviewPage = ({
         e.preventDefault();
         setIsLoading(true);
         setError(null);
+        setStreamingText('');
+        setIsStreaming(true);
+        setStage('caseworker-analysis');
+        
         try {
-            const analysis = await analyzeCaseworkerPerformance(simulationTranscript, selfAssessment);
+            const analysis = await analyzeCaseworkerPerformance(
+                simulationTranscript, 
+                selfAssessment,
+                (text) => {
+                    setStreamingText(text);
+                }
+            );
             setCaseworkerAnalysis(analysis);
-            setStage('supervisor-review');
+            setIsStreaming(false);
+            setStage('caseworker-analysis-complete');
+            
+            // Brief pause before transitioning to final view
+            setTimeout(() => {
+                setStage('supervisor-review');
+            }, 1500);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error');
+            setStage('self-assessment');
         } finally {
             setIsLoading(false);
+            setIsStreaming(false);
         }
     };
 
@@ -570,18 +599,35 @@ const ReviewPage = ({
         e.preventDefault();
         setIsLoading(true);
         setError(null);
+        setStreamingText('');
+        setIsStreaming(true);
+        setStage('supervisor-analysis');
+        
         try {
-            const analysis = await analyzeSupervisorCoaching(supervisorFeedback, simulationTranscript);
+            const analysis = await analyzeSupervisorCoaching(
+                supervisorFeedback, 
+                simulationTranscript,
+                (text) => {
+                    setStreamingText(text);
+                }
+            );
             setSupervisorAnalysis(analysis);
-            setStage('final');
+            setIsStreaming(false);
+            setStage('supervisor-analysis-complete');
+            
+            // Brief pause before transitioning to final view
+            setTimeout(() => {
+                setStage('final');
+            }, 1500);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error');
+            setStage('supervisor-review');
         } finally {
             setIsLoading(false);
+            setIsStreaming(false);
         }
     };
 
-    if (isLoading) return <div className="max-w-4xl mx-auto h-[calc(100vh-12rem)]"><LoadingIndicator text="Analyzing..." /></div>
     if (error) return <div className="bg-red-100 text-red-700 p-4 rounded-md">Error: {error}</div>
 
     const renderContent = () => {
@@ -624,28 +670,28 @@ const ReviewPage = ({
                         <button type="submit" className="w-full px-6 py-3 text-white bg-blue-600 rounded-md hover:bg-blue-700 font-semibold">Submit for AI Analysis</button>
                     </form>
                 );
+            case 'caseworker-analysis':
+            case 'caseworker-analysis-complete':
+                return (
+                    <StreamingAnalysisDisplay 
+                        streamingText={streamingText}
+                        isComplete={stage === 'caseworker-analysis-complete'}
+                    />
+                );
+            case 'supervisor-analysis':
+            case 'supervisor-analysis-complete':
+                return (
+                    <StreamingAnalysisDisplay 
+                        streamingText={streamingText}
+                        isComplete={stage === 'supervisor-analysis-complete'}
+                    />
+                );
             case 'supervisor-review':
             case 'final':
                 return (
                     <div className="space-y-8">
                         {caseworkerAnalysis && (
-                            <div className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">
-                                <h3 className="text-xl font-bold text-slate-800 mb-4">AI Feedback for Caseworker</h3>
-                                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <h4 className="font-semibold text-blue-800">Overall Summary</h4>
-                                    <p className="text-blue-700 text-sm">{caseworkerAnalysis.overallSummary}</p>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                                        <h4 className="font-semibold text-green-800 flex items-center gap-2 mb-2"><CheckCircleIcon className="w-5 h-5"/>Strengths</h4>
-                                        <ul className="list-disc list-inside space-y-1 text-green-700 text-sm">{caseworkerAnalysis.strengths.map((s,i) => <li key={i}>{s}</li>)}</ul>
-                                    </div>
-                                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                                        <h4 className="font-semibold text-amber-800 flex items-center gap-2 mb-2"><LightbulbIcon className="w-5 h-5"/>Areas for Improvement</h4>
-                                        <ul className="space-y-2 text-amber-700 text-sm">{caseworkerAnalysis.areasForImprovement.map((item,i) => <li key={i}><strong>{item.area}:</strong> {item.suggestion}</li>)}</ul>
-                                    </div>
-                                </div>
-                            </div>
+                            <AnalysisDisplay analysis={caseworkerAnalysis} />
                         )}
                         {stage === 'supervisor-review' && (
                             <form onSubmit={handleSupervisorSubmit} className="bg-white p-6 rounded-2xl shadow-lg border border-slate-200">

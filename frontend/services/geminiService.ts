@@ -65,7 +65,12 @@ async function callCloudFunction(message: string, systemInstruction: string, his
   }
 }
 
-async function callCloudFunctionForAnalysis(transcript: Message[], assessment: SelfAssessment, systemInstruction: string): Promise<string> {
+async function callCloudFunctionForAnalysis(
+  transcript: Message[], 
+  assessment: SelfAssessment, 
+  systemInstruction: string,
+  onStreamUpdate?: (text: string) => void
+): Promise<{ streamingText: string, analysisData: any }> {
   const requestBody = {
     action: 'analyze',
     transcript,
@@ -87,18 +92,136 @@ async function callCloudFunctionForAnalysis(transcript: Message[], assessment: S
       throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
     }
 
-    const data = await response.json();
-    return JSON.stringify(data);
+    // Handle streaming response
+    if (!response.body) {
+      throw new Error('Response body is null');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let streamingText = '';
+    let analysisData = null;
+    let citationsData = null;
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+        
+        // Extract the streaming text (everything before [ANALYSIS_COMPLETE])
+        const analysisMarkerIndex = fullText.indexOf('[ANALYSIS_COMPLETE]');
+        if (analysisMarkerIndex !== -1) {
+          streamingText = fullText.substring(0, analysisMarkerIndex).trim();
+        } else {
+          streamingText = fullText; // Still streaming the initial text
+        }
+        
+        // Send streaming updates if callback provided
+        if (onStreamUpdate && streamingText) {
+          onStreamUpdate(streamingText);
+        }
+        
+        // Only try to parse JSON after we have complete markers
+        const analysisCompleteIndex = fullText.indexOf('[ANALYSIS_COMPLETE]\n');
+        const citationsCompleteIndex = fullText.indexOf('[CITATIONS_COMPLETE]\n');
+        
+        // Parse analysis JSON only if we have a complete section
+        if (analysisCompleteIndex !== -1 && !analysisData) {
+          const jsonStart = analysisCompleteIndex + '[ANALYSIS_COMPLETE]\n'.length;
+          
+          // Determine the end of the analysis JSON
+          let jsonEnd = fullText.length;
+          if (citationsCompleteIndex !== -1 && citationsCompleteIndex > jsonStart) {
+            jsonEnd = citationsCompleteIndex;
+          }
+          
+          const jsonText = fullText.substring(jsonStart, jsonEnd).trim();
+          
+          // Only parse if we likely have complete JSON
+          if (jsonText.endsWith('}')) {
+            try {
+              analysisData = JSON.parse(jsonText);
+              console.log('Analysis data received and parsed successfully');
+            } catch (e) {
+              // JSON might still be incomplete, continue buffering
+              console.log('Waiting for complete analysis JSON...');
+            }
+          }
+        }
+        
+        // Parse citations JSON only if we have the complete section
+        if (citationsCompleteIndex !== -1 && !citationsData) {
+          const citationsStart = citationsCompleteIndex + '[CITATIONS_COMPLETE]\n'.length;
+          const citationsText = fullText.substring(citationsStart).trim();
+          
+          // Only parse if we likely have complete JSON
+          if (citationsText.endsWith('}')) {
+            try {
+              citationsData = JSON.parse(citationsText);
+              console.log(`Citations received: ${citationsData.citations?.length || 0} items`);
+            } catch (e) {
+              // JSON might still be incomplete, continue buffering
+              console.log('Waiting for complete citations JSON...');
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    // Final attempt to parse if we haven't succeeded yet
+    if (!analysisData) {
+      const analysisCompleteIndex = fullText.indexOf('[ANALYSIS_COMPLETE]\n');
+      const citationsCompleteIndex = fullText.indexOf('[CITATIONS_COMPLETE]\n');
+      
+      if (analysisCompleteIndex !== -1) {
+        const jsonStart = analysisCompleteIndex + '[ANALYSIS_COMPLETE]\n'.length;
+        const jsonEnd = citationsCompleteIndex !== -1 ? citationsCompleteIndex : fullText.length;
+        const jsonText = fullText.substring(jsonStart, jsonEnd).trim();
+        
+        try {
+          analysisData = JSON.parse(jsonText);
+        } catch (e) {
+          console.error('Failed to parse complete analysis JSON:', e);
+          throw new Error('Failed to parse analysis data from response');
+        }
+      }
+    }
+
+    // Merge citations into analysis data
+    if (analysisData && citationsData) {
+      analysisData.citations = citationsData.citations;
+    }
+
+    return {
+      streamingText: streamingText || 'Analysis in progress...',
+      analysisData: analysisData || null
+    };
   } catch (error) {
     console.error('Cloud Function API error:', error);
     throw new Error(`Failed to call Cloud Function: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
-export async function analyzeCaseworkerPerformance(transcript: Message[], assessment: SelfAssessment): Promise<CaseworkerAnalysis> {
+export async function analyzeCaseworkerPerformance(
+  transcript: Message[], 
+  assessment: SelfAssessment,
+  onStreamUpdate?: (text: string) => void
+): Promise<CaseworkerAnalysis> {
   try {
-    const responseText = await callCloudFunctionForAnalysis(transcript, assessment, CASEWORKER_ANALYSIS_PROMPT);
-    const rawResponse = JSON.parse(responseText);
+    const { analysisData } = await callCloudFunctionForAnalysis(transcript, assessment, CASEWORKER_ANALYSIS_PROMPT, onStreamUpdate);
+    
+    if (!analysisData) {
+      throw new Error('No analysis data received from server');
+    }
+    
+    const rawResponse = analysisData;
     
     // Check if response is already in the correct format
     if (rawResponse.overallSummary && rawResponse.strengths && rawResponse.areasForImprovement) {
@@ -148,12 +271,21 @@ export async function analyzeCaseworkerPerformance(transcript: Message[], assess
   }
 }
 
-export async function analyzeSupervisorCoaching(feedback: string, transcript: Message[]): Promise<SupervisorAnalysis> {
+export async function analyzeSupervisorCoaching(
+  feedback: string, 
+  transcript: Message[],
+  onStreamUpdate?: (text: string) => void
+): Promise<SupervisorAnalysis> {
   try {
     // Create a mock assessment for supervisor analysis
     const mockAssessment = { supervisorFeedback: feedback };
-    const responseText = await callCloudFunctionForAnalysis(transcript, mockAssessment, SUPERVISOR_ANALYSIS_PROMPT);
-    return JSON.parse(responseText) as SupervisorAnalysis;
+    const { analysisData } = await callCloudFunctionForAnalysis(transcript, mockAssessment, SUPERVISOR_ANALYSIS_PROMPT, onStreamUpdate);
+    
+    if (!analysisData) {
+      throw new Error('No analysis data received from server');
+    }
+    
+    return analysisData as SupervisorAnalysis;
   } catch (error) {
     console.error("Error analyzing supervisor coaching:", error);
     if (error instanceof Error) {
