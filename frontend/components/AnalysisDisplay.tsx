@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { CaseworkerAnalysis, TranscriptCitation, CurriculumCitation } from '../types/types';
 import { CheckCircleIcon, LightbulbIcon, SparklesIcon } from '../utils/icons';
 
@@ -7,8 +7,70 @@ interface AnalysisDisplayProps {
   analysis: CaseworkerAnalysis;
 }
 
+interface TooltipPosition {
+  top: number;
+  left: number;
+}
+
 const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
   const [hoveredCitation, setHoveredCitation] = useState<string | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ top: 0, left: 0 });
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  
+  // Find citation data
+  const findCitationData = (marker: string) => {
+    const isTranscript = marker.includes('T');
+    const num = marker.replace(/[T\[\]]/g, '');
+    
+    if (isTranscript && analysis.transcriptCitations) {
+      return analysis.transcriptCitations.find(c => c.marker === `[${marker}]`);
+    } else if (analysis.citations) {
+      return analysis.citations.find(c => c.number === parseInt(num));
+    }
+    return null;
+  };
+  
+  // Handle tooltip positioning
+  const handleMouseEnter = (event: React.MouseEvent, citationMarker: string) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTooltipPosition({
+      top: rect.top + window.scrollY - 8, // Position above the citation
+      left: rect.left + rect.width / 2 + window.scrollX
+    });
+    setHoveredCitation(citationMarker);
+  };
+  
+  // Adjust tooltip position to prevent going off-screen
+  useEffect(() => {
+    if (hoveredCitation && tooltipRef.current) {
+      const tooltip = tooltipRef.current;
+      const rect = tooltip.getBoundingClientRect();
+      let newLeft = tooltipPosition.left - rect.width / 2;
+      let newTop = tooltipPosition.top - rect.height;
+      
+      // Adjust if tooltip goes off right edge
+      if (newLeft + rect.width > window.innerWidth - 20) {
+        newLeft = window.innerWidth - rect.width - 20;
+      }
+      
+      // Adjust if tooltip goes off left edge
+      if (newLeft < 20) {
+        newLeft = 20;
+      }
+      
+      // If tooltip would go off top, position below instead
+      if (newTop < 20) {
+        const citationElement = document.querySelector(`[data-citation="${hoveredCitation}"]`);
+        if (citationElement) {
+          const citationRect = citationElement.getBoundingClientRect();
+          newTop = citationRect.bottom + window.scrollY + 8;
+        }
+      }
+      
+      tooltip.style.left = `${newLeft}px`;
+      tooltip.style.top = `${newTop}px`;
+    }
+  }, [hoveredCitation, tooltipPosition]);
   
   // Function to parse text and replace citation markers with interactive elements
   const renderTextWithCitations = (text: string) => {
@@ -24,26 +86,22 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
       }
       
       // Add citation as interactive element
-      const citationMarker = match[0];
+      const citationMarker = match[1];
       const isTranscript = citationMarker.includes('T');
       parts.push(
         <span
           key={match.index}
-          className={`inline-flex items-center justify-center w-6 h-6 text-xs rounded-full cursor-pointer transition-all ${
+          data-citation={citationMarker}
+          className={`inline-flex items-center justify-center w-6 h-6 text-xs rounded-full cursor-pointer transition-all relative ${
             isTranscript 
               ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' 
               : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-          } ${hoveredCitation === citationMarker ? 'ring-2 ring-offset-1 ring-blue-400' : ''}`}
-          onMouseEnter={() => setHoveredCitation(citationMarker)}
+          }`}
+          onMouseEnter={(e) => handleMouseEnter(e, citationMarker)}
           onMouseLeave={() => setHoveredCitation(null)}
-          onClick={() => {
-            // Scroll to citation section
-            const element = document.getElementById(`citation-${citationMarker.replace(/[\[\]]/g, '')}`);
-            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }}
-          title={isTranscript ? 'Transcript citation' : 'Curriculum citation'}
+          style={{ fontWeight: 600 }}
         >
-          {match[1]}
+          {citationMarker.replace('T', '')}
         </span>
       );
       
@@ -57,8 +115,72 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
     
     return parts;
   };
+  
+  // Render citation tooltip
+  const renderTooltip = () => {
+    if (!hoveredCitation) return null;
+    
+    const citationData = findCitationData(hoveredCitation);
+    if (!citationData) return null;
+    
+    const isTranscript = hoveredCitation.includes('T');
+    
+    return (
+      <div
+        ref={tooltipRef}
+        className="citation-tooltip"
+        style={{
+          position: 'fixed',
+          zIndex: 1000,
+          maxWidth: '400px',
+          backgroundColor: 'white',
+          border: '1px solid #e0e0e0',
+          borderRadius: '8px',
+          padding: '12px',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          fontSize: '14px',
+          lineHeight: '1.5',
+          pointerEvents: 'none'
+        }}
+      >
+        {isTranscript ? (
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: '8px', color: '#6b21a8' }}>
+              Transcript Reference
+            </div>
+            <div style={{ marginBottom: '8px' }}>
+              <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>
+                {(citationData as TranscriptCitation).speaker}:
+              </span>{' '}
+              <span style={{ fontStyle: 'italic', color: '#4b5563' }}>
+                "{(citationData as TranscriptCitation).quote}"
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: '8px', color: '#1e40af' }}>
+              {(citationData as CurriculumCitation).source}
+            </div>
+            {(citationData as CurriculumCitation).text && (
+              <div style={{ marginBottom: '8px', fontStyle: 'italic', color: '#4b5563' }}>
+                "{(citationData as CurriculumCitation).text}"
+              </div>
+            )}
+            {(citationData as CurriculumCitation).pages && (
+              <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                {(citationData as CurriculumCitation).pages}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+  
   return (
     <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-lg border border-slate-200 h-full overflow-y-auto">
+      {renderTooltip()}
       <div className="flex items-center gap-3 mb-4">
         <SparklesIcon className="w-8 h-8 text-blue-600" />
         <h2 className="text-2xl font-bold text-slate-800">Feedback Analysis</h2>
@@ -143,7 +265,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis }) => {
                         <div className="font-semibold text-blue-800">{citation.source}</div>
                         {citation.pages && <div className="text-xs text-blue-600 mt-1">{citation.pages}</div>}
                         {citation.text && (
-                          <div className="mt-2 text-slate-700 italic">"{citation.text.substring(0, 200)}..."</div>
+                          <div className="mt-2 text-slate-700 italic">"{citation.text}"</div>
                         )}
                       </div>
                     </div>

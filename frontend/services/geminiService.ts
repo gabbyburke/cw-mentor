@@ -69,7 +69,7 @@ async function callCloudFunctionForAnalysis(
   transcript: Message[], 
   assessment: SelfAssessment, 
   systemInstruction: string,
-  onStreamUpdate?: (text: string) => void
+  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean }) => void
 ): Promise<{ streamingText: string, analysisData: any }> {
   const requestBody = {
     action: 'analyze',
@@ -101,8 +101,12 @@ async function callCloudFunctionForAnalysis(
     const decoder = new TextDecoder();
     let fullText = '';
     let streamingText = '';
+    let thinkingText = '';
+    let finalText = '';
     let analysisData = null;
     let citationsData = null;
+    let isInThinking = false;
+    let thinkingComplete = false;
 
     try {
       while (true) {
@@ -113,17 +117,42 @@ async function callCloudFunctionForAnalysis(
         const chunk = decoder.decode(value, { stream: true });
         fullText += chunk;
         
-        // Extract the streaming text (everything before [ANALYSIS_COMPLETE])
-        const analysisMarkerIndex = fullText.indexOf('[ANALYSIS_COMPLETE]');
-        if (analysisMarkerIndex !== -1) {
-          streamingText = fullText.substring(0, analysisMarkerIndex).trim();
-        } else {
-          streamingText = fullText; // Still streaming the initial text
+        // Check for thinking mode markers
+        const thinkingCompleteIdx = fullText.indexOf('THINKING_COMPLETE');
+        const analysisCompleteIdx = fullText.indexOf('[ANALYSIS_COMPLETE]');
+        
+        if (thinkingCompleteIdx !== -1 && !thinkingComplete) {
+          thinkingComplete = true;
+          // Extract thinking text (everything before THINKING_COMPLETE)
+          thinkingText = fullText.substring(0, thinkingCompleteIdx).trim();
+          // Get final text (between THINKING_COMPLETE and [ANALYSIS_COMPLETE])
+          const startOfFinal = thinkingCompleteIdx + 'THINKING_COMPLETE'.length;
+          if (analysisCompleteIdx !== -1) {
+            finalText = fullText.substring(startOfFinal, analysisCompleteIdx).trim();
+          } else {
+            finalText = fullText.substring(startOfFinal).trim();
+          }
+        } else if (!thinkingComplete) {
+          // Still in thinking mode
+          thinkingText = fullText;
+          isInThinking = fullText.includes('THINKING:');
+        } else if (analysisCompleteIdx === -1) {
+          // After thinking but before analysis complete
+          const startOfFinal = fullText.indexOf('THINKING_COMPLETE') + 'THINKING_COMPLETE'.length;
+          finalText = fullText.substring(startOfFinal).trim();
         }
         
-        // Send streaming updates if callback provided
-        if (onStreamUpdate && streamingText) {
-          onStreamUpdate(streamingText);
+        // Determine what to stream
+        if (!thinkingComplete && isInThinking) {
+          streamingText = thinkingText;
+          if (onStreamUpdate) {
+            onStreamUpdate(streamingText, { isThinking: true, thinkingComplete: false });
+          }
+        } else if (thinkingComplete && finalText) {
+          streamingText = finalText;
+          if (onStreamUpdate) {
+            onStreamUpdate(streamingText, { isThinking: false, thinkingComplete: true });
+          }
         }
         
         // Only try to parse JSON after we have complete markers
@@ -212,7 +241,7 @@ async function callCloudFunctionForAnalysis(
 export async function analyzeCaseworkerPerformance(
   transcript: Message[], 
   assessment: SelfAssessment,
-  onStreamUpdate?: (text: string) => void
+  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean }) => void
 ): Promise<CaseworkerAnalysis> {
   try {
     const { analysisData } = await callCloudFunctionForAnalysis(transcript, assessment, CASEWORKER_ANALYSIS_PROMPT, onStreamUpdate);

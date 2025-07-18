@@ -549,6 +549,8 @@ const ReviewPage = ({
     // Streaming state
     const [streamingText, setStreamingText] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);
+    const [isThinking, setIsThinking] = useState(false);
+    const [thinkingComplete, setThinkingComplete] = useState(false);
 
     // Scroll to top when component mounts (when starting self-assessment)
     useEffect(() => {
@@ -568,14 +570,20 @@ const ReviewPage = ({
         setError(null);
         setStreamingText('');
         setIsStreaming(true);
+        setIsThinking(false);
+        setThinkingComplete(false);
         setStage('caseworker-analysis');
         
         try {
             const analysis = await analyzeCaseworkerPerformance(
                 simulationTranscript, 
                 selfAssessment,
-                (text) => {
+                (text, metadata) => {
                     setStreamingText(text);
+                    if (metadata) {
+                        setIsThinking(metadata.isThinking || false);
+                        setThinkingComplete(metadata.thinkingComplete || false);
+                    }
                 }
             );
             setCaseworkerAnalysis(analysis);
@@ -676,6 +684,8 @@ const ReviewPage = ({
                     <StreamingAnalysisDisplay 
                         streamingText={streamingText}
                         isComplete={stage === 'caseworker-analysis-complete'}
+                        isThinking={isThinking}
+                        thinkingComplete={thinkingComplete}
                     />
                 );
             case 'supervisor-analysis':

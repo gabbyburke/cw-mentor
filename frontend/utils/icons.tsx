@@ -62,3 +62,11 @@ export const ArrowRightIcon = ({ className, style }: { className?: string; style
 export const MagicWandIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
   <GoogleIcon name="auto_fix_high" className={className} style={style} />
 );
+
+export const ChevronDownIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="expand_more" className={className} style={style} />
+);
+
+export const ChevronUpIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <GoogleIcon name="expand_less" className={className} style={style} />
+);

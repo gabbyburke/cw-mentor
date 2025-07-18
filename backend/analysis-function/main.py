@@ -184,8 +184,15 @@ def handle_analysis(request_json, headers):
         transcript_text = '\n'.join([f"{msg.get('role', 'unknown')}: {msg.get('parts', '')}" for msg in transcript])
         logging.info(f"Formatted transcript length: {len(transcript_text)} characters")
         
-        # Create analysis prompt
-        analysis_prompt = f"""
+        # Create analysis prompt with thinking instructions
+        analysis_prompt = f"""<thinking>
+Analyze this social work parent interview transcript step by step:
+1. Review each interaction and identify key behaviors
+2. Match behaviors to the assessment criteria
+3. Identify which training materials from the curriculum would be relevant
+4. Plan what citations to include based on best practices
+</thinking>
+
 You are an expert social work educator analyzing a parent interview transcript. Use the Arkansas child welfare training materials and best practices to provide feedback.
 
 IMPORTANT CITATION RULES:
@@ -250,12 +257,10 @@ Respond with JSON in this exact format:
         
         logging.info(f"Analysis prompt prepared - length: {len(analysis_prompt)} characters")
         
-        # Configure generation with RAG grounding
+        # Configure generation with thinking mode and RAG grounding
         config = types.GenerateContentConfig(
             temperature=0.3,
             max_output_tokens=8192,
-            # Remove JSON constraint to allow natural response
-            # response_mime_type="application/json",
             safety_settings=[
                 types.SafetySetting(
                     category="HARM_CATEGORY_HARASSMENT",
@@ -274,7 +279,11 @@ Respond with JSON in this exact format:
                     threshold="BLOCK_ONLY_HIGH"
                 )
             ],
-            tools=[RAG_TOOL]  # Enable RAG grounding for curriculum-based analysis
+            tools=[RAG_TOOL],  # Enable RAG grounding for curriculum-based analysis
+            thinking_config=types.ThinkingConfig(
+                thinking_budget=24576,  # Maximum allowed value
+                include_thoughts=True  # Include thoughts in streaming
+            ),
         )
         
         # Generate analysis with streaming
@@ -282,7 +291,11 @@ Respond with JSON in this exact format:
         
         def generate():
             """Generator function for streaming response"""
-            response_text = ""
+            thinking_complete = False
+            final_text_buffer = []
+            grounding_metadata = None
+            full_response = ""
+            
             try:
                 # Stream the response from the model
                 for chunk in client.models.generate_content_stream(
@@ -290,20 +303,42 @@ Respond with JSON in this exact format:
                     contents=contents,
                     config=config
                 ):
-                    if chunk.text:
-                        response_text += chunk.text
-                        # Yield each chunk of text
-                        yield chunk.text
+                    if not chunk.candidates or not chunk.candidates[0].content:
+                        continue
                     
-                    # Log if grounding metadata is present
-                    if hasattr(chunk, 'grounding_metadata') and chunk.grounding_metadata:
-                        if hasattr(chunk.grounding_metadata, 'grounding_chunks') and chunk.grounding_metadata.grounding_chunks:
-                            logging.info(f"RAG retrieval detected - {len(chunk.grounding_metadata.grounding_chunks)} chunks")
+                    # Capture grounding metadata from streaming chunks
+                    if hasattr(chunk.candidates[0], 'grounding_metadata') and chunk.candidates[0].grounding_metadata:
+                        grounding_metadata = chunk.candidates[0].grounding_metadata
+                        if hasattr(grounding_metadata, 'grounding_chunks') and grounding_metadata.grounding_chunks:
+                            logging.info(f"Grounding metadata captured - {len(grounding_metadata.grounding_chunks)} chunks")
+                    
+                    # Process parts
+                    if chunk.candidates[0].content.parts:
+                        for part in chunk.candidates[0].content.parts:
+                            if hasattr(part, 'thought') and part.thought:
+                                # This is thinking content
+                                if not thinking_complete and part.text:
+                                    thinking_text = f"THINKING: {part.text}"
+                                    yield thinking_text
+                                    full_response += thinking_text
+                            elif part.text:
+                                # This is final content
+                                if not thinking_complete:
+                                    thinking_complete = True
+                                    yield "\n\nTHINKING_COMPLETE\n\n"
+                                    full_response += "\n\nTHINKING_COMPLETE\n\n"
+                                
+                                yield part.text
+                                final_text_buffer.append(part.text)
+                                full_response += part.text
                 
-                logging.info(f"Streaming complete - total length: {len(response_text)} characters")
+                # Combine final text
+                final_text = ''.join(final_text_buffer)
+                
+                logging.info(f"Streaming complete - total length: {len(full_response)} characters")
                 
                 # After streaming is complete, process the full response
-                if not response_text:
+                if not final_text:
                     yield json.dumps({
                         'error': 'AI model returned empty response',
                         'details': 'The model did not generate any text content'
@@ -312,7 +347,7 @@ Respond with JSON in this exact format:
             
                 # Process the complete response after streaming
                 logging.info("Processing complete response...")
-                json_text = response_text.strip()
+                json_text = final_text.strip()
                 
                 # Remove markdown code block if present
                 if json_text.startswith('```json'):
@@ -333,67 +368,38 @@ Respond with JSON in this exact format:
                     analysis = json.loads(json_text)
                     logging.info("JSON parsing successful")
                     
-                    # Add empty citations array temporarily
-                    analysis["citations"] = []
+                    # Process citations from captured grounding metadata (single-pass approach)
+                    citations = []
+                    if grounding_metadata and hasattr(grounding_metadata, 'grounding_chunks') and grounding_metadata.grounding_chunks:
+                        for idx, chunk in enumerate(grounding_metadata.grounding_chunks):
+                            if chunk.retrieved_context:
+                                ctx = chunk.retrieved_context
+                                citation = {
+                                    "number": idx + 1,
+                                    "marker": f"[{idx + 1}]",
+                                    "source": ctx.title if ctx.title else "Training Material",
+                                    "text": ctx.text if ctx.text else "",  # Full text, not truncated
+                                    "uri": ctx.uri if ctx.uri else ""
+                                }
+                                
+                                # Extract page span if available
+                                if hasattr(ctx, 'rag_chunk') and ctx.rag_chunk:
+                                    rag_chunk = ctx.rag_chunk
+                                    if hasattr(rag_chunk, 'page_span') and rag_chunk.page_span:
+                                        citation["pages"] = f"Pages {rag_chunk.page_span.first_page}-{rag_chunk.page_span.last_page}"
+                                
+                                citations.append(citation)
+                        
+                        logging.info(f"Extracted {len(citations)} citations from grounding metadata (single-pass)")
                     
-                    # Now make a second non-streaming call to get grounding metadata
-                    logging.info("Making second call to retrieve grounding metadata...")
-                    try:
-                        citation_response = client.models.generate_content(
-                            model=MODEL_NAME,
-                            contents=contents,
-                            config=config
-                        )
-                        
-                        # Extract grounding metadata for citations
-                        citations = []
-                        grounding_chunks = []
-                        
-                        if (citation_response.candidates and 
-                            citation_response.candidates[0].grounding_metadata and 
-                            citation_response.candidates[0].grounding_metadata.grounding_chunks):
-                            
-                            for idx, chunk in enumerate(citation_response.candidates[0].grounding_metadata.grounding_chunks):
-                                if chunk.retrieved_context:
-                                    ctx = chunk.retrieved_context
-                                    citation = {
-                                        "number": idx + 1,
-                                        "marker": f"[{idx + 1}]",
-                                        "source": ctx.title if ctx.title else "Training Material",
-                                        "text": ctx.text if ctx.text else "",
-                                        "uri": ctx.uri if ctx.uri else ""
-                                    }
-                                    
-                                    # Extract page span if available
-                                    if hasattr(ctx, 'rag_chunk') and ctx.rag_chunk:
-                                        rag_chunk = ctx.rag_chunk
-                                        if hasattr(rag_chunk, 'page_span') and rag_chunk.page_span:
-                                            citation["pages"] = f"Pages {rag_chunk.page_span.first_page}-{rag_chunk.page_span.last_page}"
-                                    
-                                    citations.append(citation)
-                                    grounding_chunks.append({
-                                        "text": ctx.text if ctx.text else "",
-                                        "citation_num": idx + 1
-                                    })
-                            
-                            logging.info(f"Extracted {len(citations)} citations from grounding metadata")
-                        
-                        # Ask LLM to add citation markers based on grounding chunks
-                        if citations and grounding_chunks:
-                            analysis_with_citations = add_citations_with_llm(analysis, grounding_chunks)
-                            # Send updated analysis with citations
-                            yield "\n\n[ANALYSIS_COMPLETE]\n" + json.dumps(analysis_with_citations)
-                        else:
-                            # Send original analysis if no citations
-                            yield "\n\n[ANALYSIS_COMPLETE]\n" + json.dumps(analysis)
-                        
-                        # Send citations as separate payload
-                        yield "\n\n[CITATIONS_COMPLETE]\n" + json.dumps({"citations": citations})
-                        
-                    except Exception as citation_error:
-                        logging.error(f"Failed to retrieve citations: {str(citation_error)}")
-                        # Send empty citations on error
-                        yield "\n\n[CITATIONS_COMPLETE]\n" + json.dumps({"citations": []})
+                    # Add citations to analysis
+                    analysis["citations"] = citations
+                    
+                    # Send completed analysis
+                    yield "\n\n[ANALYSIS_COMPLETE]\n" + json.dumps(analysis)
+                    
+                    # Send citations as separate payload for compatibility
+                    yield "\n\n[CITATIONS_COMPLETE]\n" + json.dumps({"citations": citations})
                     
                 except json.JSONDecodeError as json_err:
                     logging.error(f"Failed to decode JSON response: {json_err}")
@@ -429,7 +435,8 @@ Analysis to update:
 Grounding chunks used by the AI:
 """
         for chunk in grounding_chunks:
-            citation_prompt += f"\n[{chunk['citation_num']}]: {chunk['text'][:500]}..."
+            # Include full text without truncation
+            citation_prompt += f"\n[{chunk['citation_num']}]: {chunk['text']}"
         
         citation_prompt += """
 
