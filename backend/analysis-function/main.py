@@ -195,11 +195,11 @@ Analyze this social work parent interview transcript step by step:
 
 You are an expert social work educator analyzing a parent interview transcript. Use the Arkansas child welfare training materials and best practices to provide feedback.
 
-IMPORTANT INSTRUCTIONS:
-1. Focus on clear, specific feedback that references best practices
-2. ACTIVELY USE AND REFERENCE the Arkansas child welfare training materials from the curriculum datastore to ground your feedback in established best practices
-3. Include transcript citations [T1], [T2], etc. when quoting from the transcript
-4. DO NOT add curriculum or training material citation markers (like [1], [2], etc.) - these will be added automatically by the system based on the actual training materials referenced
+IMPORTANT: 
+1. Actively reference specific training concepts and best practices from the curriculum.
+2. When providing feedback, quote directly from the transcript to support your analysis.
+3. Include transcript citations [T1], [T2], etc. to mark specific quotes you reference.
+4. When referencing curriculum/training materials, include citations like [1], [2], etc. that will map to the grounding chunks retrieved from the Arkansas child welfare training materials.
 
 Analyze this social work parent interview transcript against these key criteria:
 1. Introduction & Identification - Did worker properly introduce themselves and verify parent identity?
@@ -227,11 +227,11 @@ EXAMPLE OF A GREAT RESPONSE:
   "areasForImprovement": [
     {{
       "area": "Professional Introduction",
-      "suggestion": "Begin every interaction with a complete introduction including your full name, specific agency division, and immediate presentation of identification. This establishes credibility and shows respect for the parent's need to verify your authority."
+      "suggestion": "Begin every interaction with a complete introduction including your full name, specific agency division, and immediate presentation of identification. This establishes credibility and shows respect for the parent's need to verify your authority. (Refer to 'Initial Contact Guide' [1] and 'Screening and Initial Contact' curriculum [2])."
     }},
     {{
       "area": "De-escalation Techniques",
-      "suggestion": "When parents become defensive, acknowledge their emotions first before proceeding. Use phrases like 'I understand this is unexpected and concerning for you' to validate their feelings while maintaining focus on child safety."
+      "suggestion": "When parents become defensive, acknowledge their emotions first before proceeding. Use phrases like 'I understand this is unexpected and concerning for you' to validate their feelings while maintaining focus on child safety. (Refer to 'Trauma Informed Practice Strategies' [3] and 'Partnering for Engagement' [4])."
     }}
   ],
   "criteriaAnalysis": [
@@ -248,6 +248,34 @@ EXAMPLE OF A GREAT RESPONSE:
       "score": "Good",
       "evidence": "We got a call about your kids. I need to come in and look around.",
       "feedback": "While you did state there was a call about the children, the explanation could be more specific about the nature of concerns while remaining non-accusatory. Consider framing it as 'We received a report expressing concern for your children's safety, and I'm here to talk with you about that.'"
+    }},
+    {{
+      "criterion": "Responsive to Parent",
+      "met": false,
+      "score": "Needs Improvement",
+      "evidence": "Look, we know there's been violence in the home and drug use.",
+      "feedback": "The approach was confrontational rather than responsive to the parent's confusion and concern. Active listening and empathy are essential for building rapport. When parents express confusion or defensiveness, acknowledge their feelings before proceeding."
+    }},
+    {{
+      "criterion": "Permission to Enter",
+      "met": false,
+      "score": "Poor",
+      "evidence": "I need to come in and look around... I need to see the kids now and check the house.",
+      "feedback": "The demands for entry were forceful and did not respect the parent's rights. Best practice requires explaining the voluntary nature of home visits and seeking informed consent, or clearly stating the legal basis if entry is required."
+    }},
+    {{
+      "criterion": "Information Gathering",
+      "met": false,
+      "score": "Not Attempted",
+      "evidence": "No questions asked to gather information about the family situation",
+      "feedback": "The confrontational approach prevented any meaningful information gathering. Effective assessment requires open-ended questions and creating a safe environment for parents to share information about their family's strengths and challenges."
+    }},
+    {{
+      "criterion": "Process & Next Steps",
+      "met": false,
+      "score": "Not Attempted",
+      "evidence": "No explanation of process or next steps provided",
+      "feedback": "Failed to explain the child welfare process, parent rights, or what to expect next. Transparency about the assessment process helps reduce anxiety and can foster cooperation. Parents should understand their rights and the potential outcomes."
     }}
   ],
   "transcriptCitations": [
@@ -311,12 +339,7 @@ Respond with JSON in this exact format. Do not include any text outside the JSON
         
         def generate():
             """Generator function for streaming response"""
-            thinking_complete = False
-            final_text_buffer = []
-            all_grounding_chunks = []  # Accumulate all grounding chunks
-            chunk_grounding_map = []  # Map text chunks to their grounding
-            full_response = ""
-            current_chunk_index = 0
+            chunk_index = 0
             
             try:
                 # Stream the response from the model
@@ -325,151 +348,76 @@ Respond with JSON in this exact format. Do not include any text outside the JSON
                     contents=contents,
                     config=config
                 ):
-                    current_chunk_index += 1
+                    chunk_index += 1
                     
-                    if not chunk.candidates or not chunk.candidates[0].content:
-                        logging.debug(f"Chunk {current_chunk_index}: No candidates or content")
-                        continue
+                    # Build raw chunk structure exactly like test script
+                    chunk_data = {
+                        "chunk_index": chunk_index,
+                        "candidates": []
+                    }
                     
-                    # Debug logging for chunk attributes
-                    if current_chunk_index <= 3:  # Log first few chunks in detail
-                        logging.info(f"Chunk {current_chunk_index} attributes: {dir(chunk.candidates[0])}")
-                    
-                    # Capture grounding metadata for this chunk
-                    chunk_grounding = []
-                    if hasattr(chunk.candidates[0], 'grounding_metadata'):
-                        if chunk.candidates[0].grounding_metadata:
-                            grounding_metadata = chunk.candidates[0].grounding_metadata
-                            logging.info(f"Chunk {current_chunk_index}: Has grounding_metadata")
+                    if chunk.candidates:
+                        for candidate in chunk.candidates:
+                            candidate_data = {}
                             
-                            if hasattr(grounding_metadata, 'grounding_chunks') and grounding_metadata.grounding_chunks:
-                                logging.info(f"Chunk {current_chunk_index}: {len(grounding_metadata.grounding_chunks)} grounding chunks found")
+                            # Content parts
+                            if candidate.content and candidate.content.parts:
+                                candidate_data["content"] = {
+                                    "parts": []
+                                }
                                 
-                                # Process grounding chunks for this text chunk
-                                for g_idx, g_chunk in enumerate(grounding_metadata.grounding_chunks):
-                                    if g_chunk.retrieved_context:
-                                        ctx = g_chunk.retrieved_context
-                                        grounding_info = {
-                                            "source": ctx.title if ctx.title else "Training Material",
-                                            "text": ctx.text if ctx.text else "",
-                                            "uri": ctx.uri if ctx.uri else ""
+                                for part in candidate.content.parts:
+                                    part_data = {}
+                                    if hasattr(part, 'text') and part.text:
+                                        part_data["text"] = part.text
+                                    if hasattr(part, 'thought'):
+                                        part_data["thought"] = part.thought
+                                    
+                                    if part_data:
+                                        candidate_data["content"]["parts"].append(part_data)
+                            
+                            # Grounding metadata (usually only in final chunk)
+                            if hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
+                                if hasattr(candidate.grounding_metadata, 'grounding_chunks') and candidate.grounding_metadata.grounding_chunks:
+                                    candidate_data["grounding_metadata"] = {
+                                        "grounding_chunks": []
+                                    }
+                                    
+                                    for idx, g_chunk in enumerate(candidate.grounding_metadata.grounding_chunks):
+                                        g_data = {
+                                            "_array_index": idx,  # 0-based array index
+                                            "_citation_number": idx + 1,  # Maps to [1], [2], etc in text
                                         }
                                         
-                                        # Extract page span if available
-                                        if hasattr(ctx, 'rag_chunk') and ctx.rag_chunk:
-                                            rag_chunk = ctx.rag_chunk
-                                            if hasattr(rag_chunk, 'page_span') and rag_chunk.page_span:
-                                                grounding_info["pages"] = f"Pages {rag_chunk.page_span.first_page}-{rag_chunk.page_span.last_page}"
+                                        if g_chunk.retrieved_context:
+                                            ctx = g_chunk.retrieved_context
+                                            g_data["retrieved_context"] = {
+                                                "title": ctx.title if ctx.title else None,
+                                                "uri": ctx.uri if ctx.uri else None,
+                                                "text": ctx.text if ctx.text else None
+                                            }
+                                            
+                                            # Include page span if available
+                                            if hasattr(ctx, 'rag_chunk') and ctx.rag_chunk:
+                                                if hasattr(ctx.rag_chunk, 'page_span') and ctx.rag_chunk.page_span:
+                                                    g_data["retrieved_context"]["page_span"] = {
+                                                        "first_page": ctx.rag_chunk.page_span.first_page,
+                                                        "last_page": ctx.rag_chunk.page_span.last_page
+                                                    }
                                         
-                                        chunk_grounding.append(grounding_info)
-                                        logging.debug(f"  Grounding {g_idx}: {grounding_info['source'][:50]}...")
-                                        
-                                        # Add to all chunks if not already present
-                                        if not any(g['uri'] == grounding_info['uri'] and g['text'] == grounding_info['text'] for g in all_grounding_chunks):
-                                            all_grounding_chunks.append(grounding_info)
-                            else:
-                                logging.info(f"Chunk {current_chunk_index}: grounding_metadata has no grounding_chunks")
-                        else:
-                            logging.debug(f"Chunk {current_chunk_index}: grounding_metadata is None")
-                    else:
-                        if current_chunk_index <= 10:  # Log first 10 chunks
-                            logging.info(f"Chunk {current_chunk_index}: No grounding_metadata attribute")
+                                        candidate_data["grounding_metadata"]["grounding_chunks"].append(g_data)
+                            
+                            if candidate_data:
+                                chunk_data["candidates"].append(candidate_data)
                     
-                    # Process parts
-                    if chunk.candidates[0].content.parts:
-                        for part in chunk.candidates[0].content.parts:
-                            if hasattr(part, 'thought') and part.thought:
-                                # This is thinking content
-                                if not thinking_complete and part.text:
-                                    thinking_text = f"THINKING: {part.text}"
-                                    yield thinking_text
-                                    full_response += thinking_text
-                            elif part.text:
-                                # This is final content
-                                if not thinking_complete:
-                                    thinking_complete = True
-                                    yield "\n\nTHINKING_COMPLETE\n\n"
-                                    full_response += "\n\nTHINKING_COMPLETE\n\n"
-                                
-                                yield part.text
-                                final_text_buffer.append(part.text)
-                                full_response += part.text
+                    # Output raw JSON structure with newline delimiter
+                    yield json.dumps(chunk_data, ensure_ascii=False) + "\n"
                 
-                # Combine final text
-                final_text = ''.join(final_text_buffer)
-                
-                logging.info(f"Streaming complete - total length: {len(full_response)} characters")
-                
-                # After streaming is complete, process the full response
-                if not final_text:
-                    yield json.dumps({
-                        'error': 'AI model returned empty response',
-                        'details': 'The model did not generate any text content'
-                    })
-                    return
-            
-                # Process the complete response after streaming
-                logging.info("Processing complete response...")
-                json_text = final_text.strip()
-                
-                # Remove markdown code block if present
-                if json_text.startswith('```json'):
-                    json_text = json_text[7:]  # Remove ```json
-                    if json_text.endswith('```'):
-                        json_text = json_text[:-3]  # Remove closing ```
-                elif json_text.startswith('```'):
-                    json_text = json_text[3:]  # Remove ```
-                    if json_text.endswith('```'):
-                        json_text = json_text[:-3]  # Remove closing ```
-                
-                # Try to extract JSON from response, handling potential preamble
-                json_start = json_text.find('{')
-                if json_start != -1:
-                    json_text = json_text[json_start:]
-                
-                try:
-                    analysis = json.loads(json_text)
-                    logging.info("JSON parsing successful")
-                    
-                    # Process accumulated grounding chunks into citations
-                    citations = []
-                    logging.info(f"Processing {len(all_grounding_chunks)} accumulated grounding chunks")
-                    
-                    for idx, grounding in enumerate(all_grounding_chunks):
-                        citation = {
-                            "number": idx + 1,
-                            "marker": f"[{idx + 1}]",
-                            "source": grounding["source"],
-                            "text": grounding["text"],
-                            "uri": grounding["uri"]
-                        }
-                        if "pages" in grounding:
-                            citation["pages"] = grounding["pages"]
-                        
-                        citations.append(citation)
-                    
-                    logging.info(f"Created {len(citations)} citations from accumulated grounding chunks")
-                    
-                    # Add citations to analysis
-                    analysis["citations"] = citations
-                    
-                    # Send completed analysis
-                    yield "\n\n[ANALYSIS_COMPLETE]\n" + json.dumps(analysis)
-                    
-                    # Send citations as separate payload for compatibility
-                    yield "\n\n[CITATIONS_COMPLETE]\n" + json.dumps({"citations": citations})
-                    
-                except json.JSONDecodeError as json_err:
-                    logging.error(f"Failed to decode JSON response: {json_err}")
-                    yield json.dumps({
-                        'error': 'Failed to parse AI response as JSON',
-                        'details': str(json_err),
-                        'raw_response': response_text[:1000] if response_text else 'Empty response'
-                    })
+                logging.info(f"Streaming complete - total chunks: {chunk_index}")
                     
             except Exception as e:
                 logging.exception(f"Error during streaming: {str(e)}")
-                yield json.dumps({'error': f'Streaming failed: {str(e)}'})
+                yield json.dumps({'error': f'Streaming failed: {str(e)}'}) + "\n"
         
         # Return streaming response with newline delimiter
         return Response(generate(), mimetype='text/plain', headers=headers)
