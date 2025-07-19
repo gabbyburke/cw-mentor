@@ -69,7 +69,7 @@ async function callCloudFunctionForAnalysis(
   transcript: Message[], 
   assessment: SelfAssessment, 
   systemInstruction: string,
-  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean, groundingChunks?: any[] }) => void
+  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean, groundingChunks?: any[], rawResponseChunks?: string[] }) => void
 ): Promise<{ streamingText: string, analysisData: any }> {
   const requestBody = {
     action: 'analyze',
@@ -102,6 +102,7 @@ async function callCloudFunctionForAnalysis(
     let buffer = '';
     let thinkingChunks: string[] = [];
     let contentChunks: string[] = [];
+    let rawResponseChunks: string[] = [];
     let groundingChunks: any[] = [];
     let isThinking = true;
     let thinkingComplete = false;
@@ -142,6 +143,7 @@ async function callCloudFunctionForAnalysis(
                   } else if (part.text) {
                     // This is a content chunk
                     contentChunks.push(part.text);
+                    rawResponseChunks.push(line);
                     if (isThinking) {
                       isThinking = false;
                       thinkingComplete = true;
@@ -165,7 +167,8 @@ async function callCloudFunctionForAnalysis(
               onStreamUpdate(streamingText, { 
                 isThinking, 
                 thinkingComplete,
-                groundingChunks: groundingChunks.length > 0 ? groundingChunks : undefined
+                groundingChunks: groundingChunks.length > 0 ? groundingChunks : undefined,
+                rawResponseChunks: rawResponseChunks.length > 0 ? rawResponseChunks : undefined
               });
             }
           } catch (e) {
@@ -235,10 +238,15 @@ async function callCloudFunctionForAnalysis(
 export async function analyzeCaseworkerPerformance(
   transcript: Message[], 
   assessment: SelfAssessment,
-  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean }) => void
+  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean, rawResponseChunks?: string[] }) => void
 ): Promise<CaseworkerAnalysis> {
   try {
-    const { analysisData } = await callCloudFunctionForAnalysis(transcript, assessment, CASEWORKER_ANALYSIS_PROMPT, onStreamUpdate);
+    const { analysisData } = await callCloudFunctionForAnalysis(
+      transcript, 
+      assessment, 
+      CASEWORKER_ANALYSIS_PROMPT, 
+      onStreamUpdate
+    );
     
     if (!analysisData) {
       throw new Error('No analysis data received from server');

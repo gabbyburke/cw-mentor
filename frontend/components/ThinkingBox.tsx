@@ -4,6 +4,7 @@ import { ChevronDownIcon, ChevronUpIcon } from '../utils/icons';
 interface ThinkingBoxProps {
   thinkingContent: string[];
   responseContent?: string;
+  rawResponseChunks?: string[];
   isThinkingComplete?: boolean;
   initialExpanded?: boolean;
 }
@@ -11,6 +12,7 @@ interface ThinkingBoxProps {
 const ThinkingBox: React.FC<ThinkingBoxProps> = ({ 
   thinkingContent, 
   responseContent,
+  rawResponseChunks,
   isThinkingComplete = true,
   initialExpanded = false 
 }) => {
@@ -80,7 +82,12 @@ const ThinkingBox: React.FC<ThinkingBoxProps> = ({
                   ))}
                 </>
               )}
-              {responseContent && (
+              {rawResponseChunks && rawResponseChunks.length > 0 ? (
+                <>
+                  <span style={{ color: '#9CA3AF' }}>{'\n\n======= RAW RESPONSE =======\n\n'}</span>
+                  {rawResponseChunks.join('\n')}
+                </>
+              ) : responseContent && (
                 <>
                   <span style={{ color: '#9CA3AF' }}>{'\n\n======= RESPONSE =======\n\n'}</span>
                   {responseContent}

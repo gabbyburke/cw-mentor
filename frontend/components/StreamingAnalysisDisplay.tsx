@@ -7,16 +7,19 @@ interface StreamingAnalysisDisplayProps {
   isComplete: boolean;
   isThinking?: boolean;
   thinkingComplete?: boolean;
+  rawResponseChunks?: string[];
 }
 
 const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({ 
   streamingText, 
   isComplete, 
   isThinking = false,
-  thinkingComplete = false 
+  thinkingComplete = false,
+  rawResponseChunks = []
 }) => {
   const [thinkingContent, setThinkingContent] = useState<string[]>([]);
   const [finalContent, setFinalContent] = useState('');
+  const [rawChunks, setRawChunks] = useState<string[]>([]);
   
   // Add shimmer animation style
   useEffect(() => {
@@ -80,7 +83,11 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
       // If we're not in thinking mode at all, just set the final content
       setFinalContent(streamingText);
     }
-  }, [streamingText, isThinking, thinkingComplete]);
+
+    if (rawResponseChunks.length > 0) {
+      setRawChunks(rawResponseChunks);
+    }
+  }, [streamingText, isThinking, thinkingComplete, rawResponseChunks]);
 
   const latestThinkingChunk = thinkingContent[thinkingContent.length - 1] || '';
   const showThinking = thinkingContent.length > 0;
@@ -98,6 +105,7 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
       <ThinkingBox 
         thinkingContent={thinkingContent}
         responseContent={finalContent}
+        rawResponseChunks={rawChunks}
         isThinkingComplete={thinkingComplete}
       />
       

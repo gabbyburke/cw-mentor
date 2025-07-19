@@ -564,6 +564,7 @@ const ReviewPage = ({
     const [thinkingComplete, setThinkingComplete] = useState(false);
     const [savedThinkingContent, setSavedThinkingContent] = useState<string[]>([]);
     const [savedResponseContent, setSavedResponseContent] = useState<string>('');
+    const [savedRawResponseChunks, setSavedRawResponseChunks] = useState<string[]>([]);
 
     // Scroll to top when component mounts (when starting self-assessment)
     useEffect(() => {
@@ -604,6 +605,10 @@ const ReviewPage = ({
                     if (metadata) {
                         setIsThinking(metadata.isThinking || false);
                         setThinkingComplete(metadata.thinkingComplete || false);
+
+                        if (metadata.rawResponseChunks) {
+                            setSavedRawResponseChunks(metadata.rawResponseChunks);
+                        }
                         
                         // Extract and save thinking content and response when thinking is complete
                         if (metadata.thinkingComplete && text.includes('THINKING_COMPLETE')) {
@@ -672,12 +677,13 @@ const ReviewPage = ({
                                 <SparklesIcon className="w-8 h-8 text-blue-600" />
                                 <h2 className="text-2xl font-bold text-slate-800">AI Processing Log</h2>
                             </div>
-                            <ThinkingBox 
-                                thinkingContent={savedThinkingContent}
-                                responseContent={savedResponseContent}
-                                isThinkingComplete={true}
-                                initialExpanded={true}
-                            />
+                    <ThinkingBox 
+                        thinkingContent={savedThinkingContent}
+                        responseContent={savedResponseContent}
+                        rawResponseChunks={savedRawResponseChunks}
+                        isThinkingComplete={true}
+                        initialExpanded={true}
+                    />
                             <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                                 <p className="text-amber-700 text-sm">
                                     The analysis failed, but the AI's thinking process above may help identify the issue.
@@ -755,6 +761,7 @@ const ReviewPage = ({
                         isComplete={stage === 'caseworker-analysis-complete'}
                         isThinking={isThinking}
                         thinkingComplete={thinkingComplete}
+                        rawResponseChunks={savedRawResponseChunks}
                     />
                 );
             case 'final':
@@ -765,6 +772,7 @@ const ReviewPage = ({
                                 analysis={caseworkerAnalysis} 
                                 thinkingContent={savedThinkingContent}
                                 responseContent={savedResponseContent}
+                                rawResponseChunks={savedRawResponseChunks}
                             />
                         )}
                     </div>

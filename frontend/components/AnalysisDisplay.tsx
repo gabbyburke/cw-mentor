@@ -8,6 +8,7 @@ interface AnalysisDisplayProps {
   analysis: CaseworkerAnalysis;
   thinkingContent?: string[];
   responseContent?: string;
+  rawResponseChunks?: string[];
 }
 
 interface TooltipPosition {
@@ -15,7 +16,7 @@ interface TooltipPosition {
   left: number;
 }
 
-const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingContent = [], responseContent }) => {
+const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingContent = [], responseContent, rawResponseChunks }) => {
   const [hoveredCitation, setHoveredCitation] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ top: 0, left: 0 });
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -303,6 +304,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingCon
       <ThinkingBox 
         thinkingContent={thinkingContent}
         responseContent={responseContent}
+        rawResponseChunks={rawResponseChunks}
         isThinkingComplete={true}
       />
       
