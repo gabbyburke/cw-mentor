@@ -230,9 +230,9 @@ const SupervisorAnalysisDisplay = ({
                         <p className="text-blue-700">{renderTextWithCitations(analysis.feedbackOnStrengths)}</p>
                     </div>
 
-                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                        <h4 className="font-semibold text-amber-800 mb-2">Feedback on Constructive Criticism</h4>
-                        <p className="text-amber-700">{renderTextWithCitations(analysis.feedbackOnCritique)}</p>
+                    <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                        <h4 className="font-semibold text-purple-800 mb-2">Feedback on Constructive Criticism</h4>
+                        <p className="text-purple-700">{renderTextWithCitations(analysis.feedbackOnCritique)}</p>
                     </div>
 
                     <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
