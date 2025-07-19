@@ -51,6 +51,8 @@ export interface SupervisorAnalysis {
     feedbackOnStrengths: string;
     feedbackOnCritique: string;
     overallTone: string;
+    transcriptCitations?: TranscriptCitation[];
+    citations?: CurriculumCitation[];
 }
 
 export interface AppState {

@@ -69,10 +69,11 @@ async function callCloudFunctionForAnalysis(
   transcript: Message[], 
   assessment: SelfAssessment, 
   systemInstruction: string,
-  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean, groundingChunks?: any[], rawResponseChunks?: string[] }) => void
+  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean, groundingChunks?: any[], rawResponseChunks?: string[] }) => void,
+  action: 'analyze' | 'supervisor_analysis' = 'analyze'
 ): Promise<{ streamingText: string, analysisData: any, rawResponseChunks: string[] }> {
   const requestBody = {
-    action: 'analyze',
+    action,
     transcript,
     assessment,
     systemInstruction
@@ -281,12 +282,17 @@ export async function analyzeCaseworkerPerformance(
 export async function analyzeSupervisorCoaching(
   feedback: string, 
   transcript: Message[],
-  onStreamUpdate?: (text: string) => void
+  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean, groundingChunks?: any[], rawResponseChunks?: string[] }) => void
 ): Promise<SupervisorAnalysis> {
   try {
-    // Create a mock assessment for supervisor analysis
     const mockAssessment = { supervisorFeedback: feedback };
-    const { analysisData } = await callCloudFunctionForAnalysis(transcript, mockAssessment, SUPERVISOR_ANALYSIS_PROMPT, onStreamUpdate);
+    const { analysisData } = await callCloudFunctionForAnalysis(
+      transcript, 
+      mockAssessment, 
+      SUPERVISOR_ANALYSIS_PROMPT, 
+      onStreamUpdate,
+      'supervisor_analysis'
+    );
     
     if (!analysisData) {
       throw new Error('No analysis data received from server');

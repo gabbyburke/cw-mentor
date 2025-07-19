@@ -76,8 +76,10 @@ def social_work_ai(request):
             return handle_chat(request_json, headers)
         elif action == 'analyze':
             return handle_analysis(request_json, headers)
+        elif action == 'supervisor_analysis':
+            return handle_supervisor_analysis(request_json, headers)
         else:
-            return (jsonify({'error': 'Invalid action. Use "chat" or "analyze"'}), 400, headers)
+            return (jsonify({'error': 'Invalid action. Use "chat", "analyze", or "supervisor_analysis"'}), 400, headers)
 
     except Exception as e:
         logging.exception(f"An unexpected error occurred: {str(e)}")
@@ -450,3 +452,155 @@ Respond with JSON in this exact format. Do not include any text outside the JSON
     except Exception as e:
         logging.exception(f"Error in handle_analysis: {str(e)}")
         return (jsonify({'error': f'Analysis failed: {str(e)}'}), 500, headers)
+
+def handle_supervisor_analysis(request_json, headers):
+    """Handle supervisor coaching analysis requests"""
+    try:
+        transcript = request_json.get('transcript', [])
+        supervisor_feedback = request_json.get('assessment', {}).get('supervisorFeedback', '')
+        
+        if not transcript or not supervisor_feedback:
+            return (jsonify({'error': 'Missing transcript or supervisorFeedback'}), 400, headers)
+
+        transcript_text = '\n'.join([f"{msg.get('role', 'unknown')}: {msg.get('parts', '')}" for msg in transcript])
+
+        # New prompt for coaching the coach
+        prompt = f"""You are an expert in management coaching for social work supervisors. Your task is to analyze the feedback a supervisor gave to a caseworker and evaluate the quality of the coaching itself.
+
+        **Transcript of Caseworker-Parent Interaction:**
+        {transcript_text}
+
+        **Supervisor's Feedback to Caseworker:**
+        "{supervisor_feedback}"
+
+        **Analysis Instructions:**
+        Based on the transcript and the feedback provided, evaluate the supervisor's coaching. Your analysis should be constructive, supportive, and help the supervisor improve their coaching skills.
+
+        - **Feedback on Acknowledging Strengths:** Did the supervisor effectively and specifically acknowledge the caseworker's strengths?
+        - **Feedback on Constructive Criticism:** Is the constructive criticism clear, specific, and actionable? Does it refer to specific moments in the transcript?
+        - **Overall Tone Assessment:** What is the overall tone of the feedback (e.g., 'Supportive and developmental', 'Too blunt', 'Vague and unhelpful')?
+        
+        IMPORTANT: 
+        1. Actively reference specific training concepts and best practices from the curriculum.
+        2. When providing feedback, quote directly from the transcript to support your analysis.
+        3. Include transcript citations [T1], [T2], etc. to mark specific quotes you reference.
+        4. When referencing curriculum/training materials, include citations like [1], [2], etc. that will map to the grounding chunks retrieved from the Arkansas child welfare training materials.
+
+        Return your analysis in a JSON object with the following keys: "feedbackOnStrengths", "feedbackOnCritique", "overallTone", "transcriptCitations".
+
+        EXAMPLE OF A GREAT RESPONSE:
+        {{
+          "feedbackOnStrengths": "The feedback effectively acknowledges the caseworker's strengths by highlighting a specific positive action: 'Great job building rapport by introducing yourself clearly' [T1]. By linking this praise to the caseworker's actual words from the transcript [T2], the feedback becomes more meaningful and reinforces the specific behavior. This aligns with the 'Partnering for Engagement' [1] curriculum, which emphasizes the importance of a strong introduction.",
+          "feedbackOnCritique": "The constructive criticism is clear, actionable, and supportive. It pinpoints a specific area for improvement ('how you explain the next steps') and offers a concrete, alternative phrasing [T3]. This helps the caseworker understand exactly what to do differently next time. This approach is supported by the 'Trauma-Informed Practice' guide [2], which notes that clear communication about next steps can reduce client anxiety.",
+          "overallTone": "Supportive and developmental",
+          "transcriptCitations": [
+            {{
+              "number": 1,
+              "marker": "[T1]",
+              "quote": "Great job building rapport by introducing yourself clearly",
+              "speaker": "supervisor"
+            }},
+            {{
+              "number": 2,
+              "marker": "[T2]",
+              "quote": "Hi, my name is Willis Thompson. I'm with the Oregon Department of Human Services, Child Welfare. Are you Sara Cooper?",
+              "speaker": "user"
+            }},
+            {{
+              "number": 3,
+              "marker": "[T3]",
+              "quote": "My next step is to talk with the children, and then we can create a safety plan together.",
+              "speaker": "supervisor"
+            }}
+          ]
+        }}
+        """
+
+        contents = [types.Content(role="user", parts=[types.Part(text=prompt)])]
+        
+        config = types.GenerateContentConfig(
+            temperature=0.3,
+            max_output_tokens=32768,
+            safety_settings=[
+                types.SafetySetting(
+                    category="HARM_CATEGORY_HARASSMENT",
+                    threshold="BLOCK_ONLY_HIGH"
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_HATE_SPEECH",
+                    threshold="BLOCK_ONLY_HIGH"
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                    threshold="BLOCK_MEDIUM_AND_ABOVE"
+                ),
+                types.SafetySetting(
+                    category="HARM_CATEGORY_DANGEROUS_CONTENT",
+                    threshold="BLOCK_ONLY_HIGH"
+                )
+            ],
+            tools=[RAG_TOOL],
+            thinking_config=types.ThinkingConfig(
+                thinking_budget=24576,
+                include_thoughts=True
+            ),
+        )
+
+        def generate():
+            """Generator function for streaming response"""
+            chunk_index = 0
+            raw_stream_accumulator = []
+            
+            try:
+                for chunk in client.models.generate_content_stream(
+                    model=MODEL_NAME,
+                    contents=contents,
+                    config=config
+                ):
+                    chunk_index += 1
+                    chunk_data = {"chunk_index": chunk_index, "candidates": []}
+                    if chunk.candidates:
+                        for candidate in chunk.candidates:
+                            candidate_data = {}
+                            if candidate.content and candidate.content.parts:
+                                candidate_data["content"] = {"parts": []}
+                                for part in candidate.content.parts:
+                                    part_data = {}
+                                    if hasattr(part, 'text') and part.text:
+                                        part_data["text"] = part.text
+                                    if hasattr(part, 'thought'):
+                                        part_data["thought"] = part.thought
+                                    if part_data:
+                                        candidate_data["content"]["parts"].append(part_data)
+                            if hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
+                                if hasattr(candidate.grounding_metadata, 'grounding_chunks') and candidate.grounding_metadata.grounding_chunks:
+                                    candidate_data["grounding_metadata"] = {"grounding_chunks": []}
+                                    for idx, g_chunk in enumerate(candidate.grounding_metadata.grounding_chunks):
+                                        g_data = {"_array_index": idx, "_citation_number": idx + 1}
+                                        if g_chunk.retrieved_context:
+                                            ctx = g_chunk.retrieved_context
+                                            g_data["retrieved_context"] = {
+                                                "title": ctx.title if ctx.title else None,
+                                                "uri": ctx.uri if ctx.uri else None,
+                                                "text": ctx.text if ctx.text else None
+                                            }
+                                            if hasattr(ctx, 'rag_chunk') and ctx.rag_chunk and hasattr(ctx.rag_chunk, 'page_span') and ctx.rag_chunk.page_span:
+                                                g_data["retrieved_context"]["page_span"] = {
+                                                    "first_page": ctx.rag_chunk.page_span.first_page,
+                                                    "last_page": ctx.rag_chunk.page_span.last_page
+                                                }
+                                        candidate_data["grounding_metadata"]["grounding_chunks"].append(g_data)
+                            if candidate_data:
+                                chunk_data["candidates"].append(candidate_data)
+                    raw_stream_accumulator.append(json.dumps(chunk_data, ensure_ascii=False))
+                    yield json.dumps(chunk_data, ensure_ascii=False) + "\n"
+                logging.info(f"Streaming complete - total chunks: {chunk_index}")
+            except Exception as e:
+                logging.exception(f"Error during streaming: {str(e)}")
+                yield json.dumps({'error': f'Streaming failed: {str(e)}'}) + "\n"
+        
+        return Response(generate(), mimetype='text/plain', headers=headers)
+
+    except Exception as e:
+        logging.exception(f"Error in handle_supervisor_analysis: {str(e)}")
+        return (jsonify({'error': f'Supervisor analysis failed: {str(e)}'}), 500, headers)

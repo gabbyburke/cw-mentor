@@ -11,6 +11,7 @@ import SplashScreen from './SplashScreen';
 import StreamingAnalysisDisplay from './StreamingAnalysisDisplay';
 import AnalysisDisplay from './AnalysisDisplay';
 import ThinkingBox from './ThinkingBox';
+import SupervisorAnalysisDisplay from './SupervisorAnalysisDisplay';
 
 
 //region --- UI Components ---
@@ -838,8 +839,15 @@ const SupervisorDashboard = ({ onBack }: { onBack: () => void }) => {
     const [supervisorAnalysis, setSupervisorAnalysis] = useState<SupervisorAnalysis | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<'input' | 'results'>('input');
+    const [viewMode, setViewMode] = useState<'input' | 'loading' | 'results'>('input');
     const [selectedTranscriptIndex, setSelectedTranscriptIndex] = useState<number | null>(null);
+    const [streamingText, setStreamingText] = useState('');
+    const [isStreaming, setIsStreaming] = useState(false);
+    const [isThinking, setIsThinking] = useState(false);
+    const [thinkingComplete, setThinkingComplete] = useState(false);
+    const [savedThinkingContent, setSavedThinkingContent] = useState<string[]>([]);
+    const [savedResponseContent, setSavedResponseContent] = useState<string>('');
+    const [savedRawResponseChunks, setSavedRawResponseChunks] = useState<string[]>([]);
 
     // Prepare historical transcripts for the dropdown
     const historicalTranscripts = Object.entries(SIMULATION_PREFILL_EXAMPLES).flatMap(([scenarioId, examples]) => 
@@ -877,9 +885,13 @@ const SupervisorDashboard = ({ onBack }: { onBack: () => void }) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
+        setStreamingText('');
+        setIsStreaming(true);
+        setIsThinking(false);
+        setThinkingComplete(false);
+        setViewMode('loading');
 
         try {
-            // Convert transcript string to Message array format
             const transcriptMessages: Message[] = transcriptInput
                 .split('\n')
                 .filter(line => line.trim())
@@ -887,14 +899,47 @@ const SupervisorDashboard = ({ onBack }: { onBack: () => void }) => {
                     role: index % 2 === 0 ? 'user' : 'model' as 'user' | 'model',
                     parts: line.trim()
                 }));
-            
-            const analysis = await analyzeSupervisorCoaching(supervisorFeedback, transcriptMessages);
+
+            const analysis = await analyzeSupervisorCoaching(
+                supervisorFeedback,
+                transcriptMessages,
+                (text, metadata) => {
+                    setStreamingText(text);
+                    if (metadata) {
+                        setIsThinking(metadata.isThinking || false);
+                        setThinkingComplete(metadata.thinkingComplete || false);
+                        if (metadata.rawResponseChunks) {
+                            setSavedRawResponseChunks(metadata.rawResponseChunks);
+                        }
+                        if (metadata.thinkingComplete && text.includes('THINKING_COMPLETE')) {
+                            const parts = text.split('THINKING_COMPLETE');
+                            if (parts.length >= 2) {
+                                const thinkingPart = parts[0].trim();
+                                if (thinkingPart) {
+                                    const thinkingSections = thinkingPart
+                                        .split(/\n\n+/)
+                                        .filter(section => section.trim())
+                                        .map(section => section.trim());
+                                    if (thinkingSections.length > 0) {
+                                        setSavedThinkingContent(thinkingSections);
+                                    }
+                                }
+                                const responsePart = parts.slice(1).join('THINKING_COMPLETE').trim();
+                                if (responsePart) {
+                                    setSavedResponseContent(responsePart);
+                                }
+                            }
+                        }
+                    }
+                }
+            );
             setSupervisorAnalysis(analysis);
             setViewMode('results');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error occurred');
         } finally {
             setIsLoading(false);
+            setIsStreaming(false);
         }
     };
 
@@ -905,7 +950,111 @@ const SupervisorDashboard = ({ onBack }: { onBack: () => void }) => {
         setViewMode('input');
     };
 
-    if (isLoading) return <LoadingIndicator text="Analyzing supervisor feedback..." />;
+    const renderContent = () => {
+        if (viewMode === 'loading') {
+            return <StreamingAnalysisDisplay 
+                streamingText={streamingText}
+                isComplete={!isStreaming}
+                isThinking={isThinking}
+                thinkingComplete={thinkingComplete}
+                rawResponseChunks={savedRawResponseChunks}
+            />;
+        }
+
+        if (viewMode === 'results' && supervisorAnalysis) {
+            return (
+                <div>
+                    <SupervisorAnalysisDisplay 
+                        analysis={supervisorAnalysis}
+                        thinkingContent={savedThinkingContent}
+                        responseContent={savedResponseContent}
+                        rawResponseChunks={savedRawResponseChunks}
+                    />
+                    <div className="text-center mt-6">
+                        <button onClick={reset} className="btn-secondary">
+                            Try Another Example
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <form onSubmit={handleSubmit} className="self-assessment-form">
+                <h3 className="assessment-title">Supervisor Coaching Practice</h3>
+                <p className="assessment-subtitle">
+                    Practice providing effective feedback. Enter a transcript and your coaching notes, then get AI analysis on your supervisory approach.
+                </p>
+                <div className="assessment-criteria-container">
+                    <div className="assessment-criterion">
+                        <label className="criterion-label" htmlFor="transcript-select">
+                            Simulation Transcript
+                        </label>
+                        <p className="criterion-description">Select a historical transcript or paste one into the text area below.</p>
+                        <select
+                            id="transcript-select"
+                            onChange={handleTranscriptChange}
+                            className="criterion-select"
+                            style={{ marginBottom: 'var(--unit-3)' }}
+                        >
+                            <option value="">Select a transcript...</option>
+                            {historicalTranscripts.map((item, index) => (
+                                <option key={index} value={item.transcript}>
+                                    {item.name}
+                                </option>
+                            ))}
+                        </select>
+                        <textarea
+                            id="transcript"
+                            rows={8}
+                            required
+                            value={transcriptInput}
+                            onChange={(e) => setTranscriptInput(e.target.value)}
+                            className="criterion-textarea"
+                            placeholder="The selected transcript will appear here, or you can paste your own."
+                        />
+                    </div>
+
+                    <div className="assessment-criterion">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--unit-2)' }}>
+                            <label className="criterion-label" htmlFor="feedback" style={{ marginBottom: 0 }}>
+                                Your Supervisor Feedback
+                            </label>
+                            <button
+                                type="button"
+                                onClick={handlePrefill}
+                                className="glossy-chip-surface"
+                                disabled={selectedTranscriptIndex === null}
+                            >
+                                <MagicWandIcon className="w-4 h-4" />
+                                <span>Prefill Example</span>
+                            </button>
+                        </div>
+                        <p className="criterion-description">Write your coaching feedback for the caseworker based on the transcript above.</p>
+                        <textarea
+                            id="feedback"
+                            rows={6}
+                            required
+                            value={supervisorFeedback}
+                            onChange={(e) => setSupervisorFeedback(e.target.value)}
+                            className="criterion-textarea"
+                            placeholder="e.g., 'Great job building rapport. For next time, let's focus on asking more open-ended questions to gather details.'"
+                        />
+                    </div>
+                </div>
+                <div className="assessment-submit-container">
+                    <button
+                        type="submit"
+                        className="btn-submit-assessment"
+                        disabled={!transcriptInput.trim() || !supervisorFeedback.trim()}
+                    >
+                        <SparklesIcon className="w-5 h-5" />
+                        Get AI Analysis
+                    </button>
+                </div>
+            </form>
+        );
+    };
 
     return (
         <div className="max-w-4xl mx-auto">
@@ -914,111 +1063,7 @@ const SupervisorDashboard = ({ onBack }: { onBack: () => void }) => {
                     <strong>Error:</strong> {error}
                 </div>
             )}
-
-            {viewMode === 'input' ? (
-                <form onSubmit={handleSubmit} className="self-assessment-form">
-                    <h3 className="assessment-title">Supervisor Coaching Practice</h3>
-                    <p className="assessment-subtitle">
-                        Practice providing effective feedback. Enter a transcript and your coaching notes, then get AI analysis on your supervisory approach.
-                    </p>
-                    <div className="assessment-criteria-container">
-                        <div className="assessment-criterion">
-                            <label className="criterion-label" htmlFor="transcript-select">
-                                Simulation Transcript
-                            </label>
-                            <p className="criterion-description">Select a historical transcript or paste one into the text area below.</p>
-                            <select
-                                id="transcript-select"
-                                onChange={handleTranscriptChange}
-                                className="criterion-select"
-                                style={{ marginBottom: 'var(--unit-3)' }}
-                            >
-                                <option value="">Select a transcript...</option>
-                                {historicalTranscripts.map((item, index) => (
-                                    <option key={index} value={item.transcript}>
-                                        {item.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <textarea
-                                id="transcript"
-                                rows={8}
-                                required
-                                value={transcriptInput}
-                                onChange={(e) => setTranscriptInput(e.target.value)}
-                                className="criterion-textarea"
-                                placeholder="The selected transcript will appear here, or you can paste your own."
-                            />
-                        </div>
-
-                        <div className="assessment-criterion">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--unit-2)' }}>
-                                <label className="criterion-label" htmlFor="feedback" style={{ marginBottom: 0 }}>
-                                    Your Supervisor Feedback
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={handlePrefill}
-                                    className="glossy-chip-surface"
-                                    disabled={selectedTranscriptIndex === null}
-                                >
-                                    <MagicWandIcon className="w-4 h-4" />
-                                    <span>Prefill Example</span>
-                                </button>
-                            </div>
-                            <p className="criterion-description">Write your coaching feedback for the caseworker based on the transcript above.</p>
-                            <textarea
-                                id="feedback"
-                                rows={6}
-                                required
-                                value={supervisorFeedback}
-                                onChange={(e) => setSupervisorFeedback(e.target.value)}
-                                className="criterion-textarea"
-                                placeholder="e.g., 'Great job building rapport. For next time, let's focus on asking more open-ended questions to gather details.'"
-                            />
-                        </div>
-                    </div>
-                    <div className="assessment-submit-container">
-                        <button
-                            type="submit"
-                            className="btn-submit-assessment"
-                            disabled={!transcriptInput.trim() || !supervisorFeedback.trim()}
-                        >
-                            <SparklesIcon className="w-5 h-5" />
-                            Get AI analysis
-                        </button>
-                    </div>
-                </form>
-            ) : (
-                <div className="space-y-6">
-                    {supervisorAnalysis && (
-                        <div className="card">
-                            <h3 className="h3 mb-4">AI Analysis of Your Coaching</h3>
-                            
-                            <div className="space-y-4">
-                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <h4 className="font-semibold text-blue-800 mb-2">Feedback on Acknowledging Strengths</h4>
-                                    <p className="text-blue-700">{supervisorAnalysis.feedbackOnStrengths}</p>
-                                </div>
-
-                                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                                    <h4 className="font-semibold text-amber-800 mb-2">Feedback on Constructive Criticism</h4>
-                                    <p className="text-amber-700">{supervisorAnalysis.feedbackOnCritique}</p>
-                                </div>
-
-                                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                                    <h4 className="font-semibold text-green-800 mb-2">Overall Tone Assessment</h4>
-                                    <p className="text-green-700 font-medium">{supervisorAnalysis.overallTone}</p>
-                                </div>
-                            </div>
-
-                            <button onClick={reset} className="btn-secondary mt-6">
-                                Try Another Example
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
+            {renderContent()}
         </div>
     );
 };
