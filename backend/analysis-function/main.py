@@ -484,7 +484,7 @@ def handle_supervisor_analysis(request_json, headers):
         1. Actively reference specific training concepts and best practices from the curriculum.
         2. When providing feedback, quote directly from the transcript to support your analysis.
         3. Include transcript citations [T1], [T2], etc. to mark specific quotes you reference.
-        4. When referencing curriculum/training materials, include citations like [1], [2], etc. that will map to the grounding chunks retrieved from the Arkansas child welfare training materials.
+        4. When referencing curriculum/training materials, include citations like [1], [2], etc. that will map to the grounding chunks retrieved from the curriculum RAG TOOL datastore.
 
         Return your analysis in a JSON object with the following keys: "feedbackOnStrengths", "feedbackOnCritique", "overallTone", "transcriptCitations".
 
