@@ -93,36 +93,47 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingCon
       const citationGroup = match[1];
       const citations = citationGroup.split(',').map(c => c.trim());
       
-      // Create a span for each citation
+      // Create interactive citation elements
       const matchIndex = match.index;
       const citationElements = citations.map((citationMarker, idx) => {
         const isTranscript = citationMarker.includes('T');
+        const displayNumber = citationMarker.replace('T', '');
+        
         return (
           <React.Fragment key={`${matchIndex}-${idx}`}>
-            {idx > 0 && <span className="mx-0.5">,</span>}
+            {idx > 0 && ', '}
             <span
               data-citation={citationMarker}
-              className={`inline-flex items-center justify-center w-6 h-6 text-xs rounded-full cursor-pointer transition-all relative ${
-                isTranscript 
-                  ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' 
-                  : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-              }`}
+              className={`citation-link ${isTranscript ? 'transcript' : 'curriculum'}`}
               onMouseEnter={(e) => handleMouseEnter(e, citationMarker)}
               onMouseLeave={() => setHoveredCitation(null)}
-              style={{ fontWeight: 600 }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // Keep tooltip open on click
+                handleMouseEnter(e, citationMarker);
+              }}
+              style={{
+                cursor: 'pointer',
+                fontWeight: 600,
+                color: isTranscript ? '#7c3aed' : '#2563eb',
+                textDecoration: 'underline',
+                textDecorationStyle: 'dotted',
+                textUnderlineOffset: '2px'
+              }}
             >
-              {citationMarker.replace('T', '')}
+              {displayNumber}
             </span>
           </React.Fragment>
         );
       });
       
-      // Wrap multiple citations in a bracket-style container
+      // Wrap citations in brackets
       parts.push(
-        <span key={matchIndex} className="inline-flex items-center">
-          <span className="text-gray-600">[</span>
+        <span key={matchIndex} className="citation-group">
+          [
           {citationElements}
-          <span className="text-gray-600">]</span>
+          ]
         </span>
       );
       
@@ -153,46 +164,127 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingCon
         style={{
           position: 'fixed',
           zIndex: 1000,
-          maxWidth: '400px',
+          maxWidth: '450px',
           backgroundColor: 'white',
-          border: '1px solid #e0e0e0',
-          borderRadius: '8px',
-          padding: '12px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          borderRadius: '12px',
+          padding: '16px',
           fontSize: '14px',
-          lineHeight: '1.5',
-          pointerEvents: 'none'
+          lineHeight: '1.6',
+          pointerEvents: 'auto',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08)',
+          border: isTranscript ? '1px solid #ddd1fe' : '1px solid #bfdbfe'
         }}
       >
         {isTranscript ? (
           <div>
-            <div style={{ fontWeight: 600, marginBottom: '8px', color: '#6b21a8' }}>
+            <div style={{ 
+              fontWeight: 600, 
+              marginBottom: '8px', 
+              color: '#6b21a8',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '20px',
+                height: '20px',
+                backgroundColor: '#e9d5ff',
+                color: '#6b21a8',
+                borderRadius: '50%',
+                fontSize: '12px',
+                fontWeight: 'bold'
+              }}>
+                T
+              </span>
               Transcript Reference
             </div>
-            <div style={{ marginBottom: '8px' }}>
-              <span style={{ fontWeight: 500, textTransform: 'capitalize' }}>
-                {(citationData as TranscriptCitation).speaker}:
-              </span>{' '}
-              <span style={{ fontStyle: 'italic', color: '#4b5563' }}>
+            <div style={{ 
+              backgroundColor: '#faf5ff', 
+              padding: '12px', 
+              borderRadius: '8px',
+              border: '1px solid #e9d5ff'
+            }}>
+              <div style={{ marginBottom: '4px' }}>
+                <span style={{ 
+                  fontWeight: 600, 
+                  textTransform: 'capitalize',
+                  color: '#6b21a8' 
+                }}>
+                  {(citationData as TranscriptCitation).speaker}:
+                </span>
+              </div>
+              <div style={{ 
+                fontStyle: 'italic', 
+                color: '#4b5563',
+                paddingLeft: '12px'
+              }}>
                 "{(citationData as TranscriptCitation).quote}"
-              </span>
+              </div>
             </div>
           </div>
         ) : (
           <div>
-            <div style={{ fontWeight: 600, marginBottom: '8px', color: '#1e40af' }}>
-              {(citationData as CurriculumCitation).source}
+            <div style={{ 
+              fontWeight: 600, 
+              marginBottom: '8px', 
+              color: '#1e40af',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '20px',
+                height: '20px',
+                backgroundColor: '#dbeafe',
+                color: '#1e40af',
+                borderRadius: '50%',
+                fontSize: '12px',
+                fontWeight: 'bold'
+              }}>
+                {(citationData as CurriculumCitation).number}
+              </span>
+              Curriculum Reference
             </div>
-            {(citationData as CurriculumCitation).text && (
-              <div style={{ marginBottom: '8px', fontStyle: 'italic', color: '#4b5563' }}>
-                "{(citationData as CurriculumCitation).text}"
+            <div style={{ 
+              backgroundColor: '#eff6ff', 
+              padding: '12px', 
+              borderRadius: '8px',
+              border: '1px solid #dbeafe'
+            }}>
+              <div style={{ 
+                fontWeight: 600, 
+                color: '#1e40af',
+                marginBottom: '8px' 
+              }}>
+                {(citationData as CurriculumCitation).source}
               </div>
-            )}
-            {(citationData as CurriculumCitation).pages && (
-              <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                {(citationData as CurriculumCitation).pages}
-              </div>
-            )}
+              {(citationData as CurriculumCitation).text && (
+                <div style={{ 
+                  fontStyle: 'italic', 
+                  color: '#4b5563',
+                  paddingLeft: '12px',
+                  borderLeft: '3px solid #dbeafe',
+                  marginBottom: '8px'
+                }}>
+                  "{(citationData as CurriculumCitation).text}"
+                </div>
+              )}
+              {(citationData as CurriculumCitation).pages && (
+                <div style={{ 
+                  fontSize: '12px', 
+                  color: '#6b7280',
+                  marginTop: '8px'
+                }}>
+                  📄 {(citationData as CurriculumCitation).pages}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

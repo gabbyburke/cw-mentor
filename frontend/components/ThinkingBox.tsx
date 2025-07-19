@@ -97,12 +97,12 @@ const ThinkingBox: React.FC<ThinkingBoxProps> = ({
                 // Show response content if available
                 const responsePreview = responseContent.split('\n')[0];
                 const cleanResponse = responsePreview.replace(/\*\*/g, '');
-                return `Response: ${cleanResponse.substring(0, 50)}...`;
+                return `Response: ${cleanResponse}`;
               } else if (thinkingContent.length > 0) {
                 // Show thinking content
                 const latestContent = thinkingContent[thinkingContent.length - 1].split('\n')[0];
                 const cleanContent = latestContent.replace(/\*\*/g, '');
-                return `${cleanContent.substring(0, 60)}...`;
+                return cleanContent;
               } else {
                 return 'AI is analyzing...';
               }

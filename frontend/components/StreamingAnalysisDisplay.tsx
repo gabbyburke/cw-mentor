@@ -36,18 +36,12 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
   // Process streaming text based on whether it's thinking or final content
   useEffect(() => {
     if (isThinking && !thinkingComplete) {
-      // Split by "THINKING:" to get all sections
-      const parts = streamingText.split(/THINKING:/);
-      const thinkingSections: string[] = [];
-      
-      // Skip first part if empty (before first THINKING:)
-      for (let i = 1; i < parts.length; i++) {
-        const section = parts[i].trim();
-        if (section) {
-          // Each section might have multiple paragraphs, keep them together
-          thinkingSections.push(section);
-        }
-      }
+      // For the new format, thinking content comes directly without markers
+      // Split the thinking content into chunks based on double newlines for better display
+      const thinkingSections = streamingText
+        .split(/\n\n+/)
+        .filter(section => section.trim())
+        .map(section => section.trim());
       
       if (thinkingSections.length > 0) {
         setThinkingContent(thinkingSections);
@@ -65,15 +59,10 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
         // Extract thinking content if not already set
         const thinkingPart = parts[0].trim();
         if (thinkingPart) {
-          const thinkingParts = thinkingPart.split(/THINKING:/);
-          const thinkingSections: string[] = [];
-          
-          for (let i = 1; i < thinkingParts.length; i++) {
-            const section = thinkingParts[i].trim();
-            if (section) {
-              thinkingSections.push(section);
-            }
-          }
+          const thinkingSections = thinkingPart
+            .split(/\n\n+/)
+            .filter(section => section.trim())
+            .map(section => section.trim());
           
           if (thinkingSections.length > 0) {
             setThinkingContent(thinkingSections);
@@ -87,7 +76,7 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
         // Fallback: treat entire content as final if no THINKING_COMPLETE marker
         setFinalContent(streamingText);
       }
-    } else if (!isThinking && streamingText) {
+    } else if (!isThinking && streamingText && !streamingText.includes('THINKING_COMPLETE')) {
       // If we're not in thinking mode at all, just set the final content
       setFinalContent(streamingText);
     }

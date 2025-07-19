@@ -69,7 +69,7 @@ async function callCloudFunctionForAnalysis(
   transcript: Message[], 
   assessment: SelfAssessment, 
   systemInstruction: string,
-  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean }) => void
+  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean, groundingChunks?: any[] }) => void
 ): Promise<{ streamingText: string, analysisData: any }> {
   const requestBody = {
     action: 'analyze',
@@ -99,14 +99,13 @@ async function callCloudFunctionForAnalysis(
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    let fullText = '';
-    let streamingText = '';
-    let thinkingText = '';
-    let finalText = '';
-    let analysisData = null;
-    let citationsData = null;
-    let isInThinking = false;
+    let buffer = '';
+    let thinkingChunks: string[] = [];
+    let contentChunks: string[] = [];
+    let groundingChunks: any[] = [];
+    let isThinking = true;
     let thinkingComplete = false;
+    let analysisData: any = null;
 
     try {
       while (true) {
@@ -114,124 +113,117 @@ async function callCloudFunctionForAnalysis(
         
         if (done) break;
         
+        // Decode the chunk and add to buffer
         const chunk = decoder.decode(value, { stream: true });
-        fullText += chunk;
+        buffer += chunk;
         
-        // Check for thinking mode markers
-        const thinkingCompleteIdx = fullText.indexOf('THINKING_COMPLETE');
-        const analysisCompleteIdx = fullText.indexOf('[ANALYSIS_COMPLETE]');
+        // Process complete lines (newline-delimited JSON)
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
         
-        if (thinkingCompleteIdx !== -1 && !thinkingComplete) {
-          thinkingComplete = true;
-          // Extract thinking text (everything before THINKING_COMPLETE)
-          thinkingText = fullText.substring(0, thinkingCompleteIdx).trim();
-          // Get final text (between THINKING_COMPLETE and [ANALYSIS_COMPLETE])
-          const startOfFinal = thinkingCompleteIdx + 'THINKING_COMPLETE'.length;
-          if (analysisCompleteIdx !== -1) {
-            finalText = fullText.substring(startOfFinal, analysisCompleteIdx).trim();
-          } else {
-            finalText = fullText.substring(startOfFinal).trim();
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          
+          try {
+            const chunkData = JSON.parse(line);
+            
+            if (chunkData.candidates && chunkData.candidates.length > 0) {
+              const candidate = chunkData.candidates[0];
+              
+              // Process content parts
+              if (candidate.content && candidate.content.parts) {
+                for (const part of candidate.content.parts) {
+                  if (part.thought === true) {
+                    // This is a thinking chunk
+                    if (part.text) {
+                      thinkingChunks.push(part.text);
+                      isThinking = true;
+                    }
+                  } else if (part.text) {
+                    // This is a content chunk
+                    contentChunks.push(part.text);
+                    if (isThinking) {
+                      isThinking = false;
+                      thinkingComplete = true;
+                    }
+                  }
+                }
+              }
+              
+              // Process grounding metadata (usually in final chunk)
+              if (candidate.grounding_metadata && candidate.grounding_metadata.grounding_chunks) {
+                groundingChunks = candidate.grounding_metadata.grounding_chunks;
+              }
+            }
+            
+            // Update streaming display
+            if (onStreamUpdate) {
+              const streamingText = isThinking 
+                ? thinkingChunks.join('') 
+                : thinkingChunks.join('') + '\n\nTHINKING_COMPLETE\n\n' + contentChunks.join('');
+                
+              onStreamUpdate(streamingText, { 
+                isThinking, 
+                thinkingComplete,
+                groundingChunks: groundingChunks.length > 0 ? groundingChunks : undefined
+              });
+            }
+          } catch (e) {
+            console.error('Error parsing chunk:', e, 'Line:', line);
           }
-        } else if (!thinkingComplete) {
-          // Still in thinking mode
-          thinkingText = fullText;
-          isInThinking = fullText.includes('THINKING:');
-        } else if (analysisCompleteIdx === -1) {
-          // After thinking but before analysis complete
-          const startOfFinal = fullText.indexOf('THINKING_COMPLETE') + 'THINKING_COMPLETE'.length;
-          finalText = fullText.substring(startOfFinal).trim();
         }
-        
-        // Determine what to stream
-        if (!thinkingComplete && isInThinking) {
-          streamingText = thinkingText;
-          if (onStreamUpdate) {
-            onStreamUpdate(streamingText, { isThinking: true, thinkingComplete: false });
-          }
-        } else if (thinkingComplete && finalText) {
-          // When thinking is complete, we want to preserve both thinking and final content
-          // The component will handle separating them based on the metadata
-          streamingText = thinkingText + '\n\nTHINKING_COMPLETE\n\n' + finalText;
-          if (onStreamUpdate) {
-            onStreamUpdate(streamingText, { isThinking: false, thinkingComplete: true });
-          }
-        }
-        
-        // Only try to parse JSON after we have complete markers
-        const analysisCompleteIndex = fullText.indexOf('[ANALYSIS_COMPLETE]\n');
-        const citationsCompleteIndex = fullText.indexOf('[CITATIONS_COMPLETE]\n');
-        
-        // Parse analysis JSON only if we have a complete section
-        if (analysisCompleteIndex !== -1 && !analysisData) {
-          const jsonStart = analysisCompleteIndex + '[ANALYSIS_COMPLETE]\n'.length;
-          
-          // Determine the end of the analysis JSON
-          let jsonEnd = fullText.length;
-          if (citationsCompleteIndex !== -1 && citationsCompleteIndex > jsonStart) {
-            jsonEnd = citationsCompleteIndex;
-          }
-          
-          const jsonText = fullText.substring(jsonStart, jsonEnd).trim();
-          
-          // Only parse if we likely have complete JSON
-          if (jsonText.endsWith('}')) {
-            try {
-              analysisData = JSON.parse(jsonText);
-              console.log('Analysis data received and parsed successfully');
-            } catch (e) {
-              // JSON might still be incomplete, continue buffering
-              console.log('Waiting for complete analysis JSON...');
+      }
+      
+      // Process any remaining data in buffer
+      if (buffer.trim()) {
+        try {
+          const chunkData = JSON.parse(buffer);
+          if (chunkData.candidates && chunkData.candidates.length > 0) {
+            const candidate = chunkData.candidates[0];
+            if (candidate.content && candidate.content.parts) {
+              for (const part of candidate.content.parts) {
+                if (part.text && part.thought !== true) {
+                  contentChunks.push(part.text);
+                }
+              }
             }
           }
+        } catch (e) {
+          console.error('Error parsing final buffer:', e);
         }
-        
-        // Parse citations JSON only if we have the complete section
-        if (citationsCompleteIndex !== -1 && !citationsData) {
-          const citationsStart = citationsCompleteIndex + '[CITATIONS_COMPLETE]\n'.length;
-          const citationsText = fullText.substring(citationsStart).trim();
+      }
+      
+      // Parse the final JSON content
+      const fullContent = contentChunks.join('');
+      if (fullContent) {
+        try {
+          // Remove the closing ``` if present
+          const jsonContent = fullContent.replace(/```\s*$/, '').replace(/^```json\s*/, '');
+          analysisData = JSON.parse(jsonContent);
           
-          // Only parse if we likely have complete JSON
-          if (citationsText.endsWith('}')) {
-            try {
-              citationsData = JSON.parse(citationsText);
-              console.log(`Citations received: ${citationsData.citations?.length || 0} items`);
-            } catch (e) {
-              // JSON might still be incomplete, continue buffering
-              console.log('Waiting for complete citations JSON...');
-            }
+          // Add grounding chunks as citations if available
+          if (groundingChunks.length > 0) {
+            analysisData.citations = groundingChunks.map((chunk: any) => ({
+              number: chunk._citation_number,
+              source: chunk.retrieved_context?.title || 'Unknown source',
+              text: chunk.retrieved_context?.text || '',
+              pages: chunk.retrieved_context?.page_span 
+                ? `Pages ${chunk.retrieved_context.page_span.first_page}-${chunk.retrieved_context.page_span.last_page}`
+                : undefined,
+              uri: chunk.retrieved_context?.uri
+            }));
           }
+        } catch (e) {
+          console.error('Error parsing analysis JSON:', e);
+          console.error('Content:', fullContent);
         }
       }
     } finally {
       reader.releaseLock();
     }
 
-    // Final attempt to parse if we haven't succeeded yet
-    if (!analysisData) {
-      const analysisCompleteIndex = fullText.indexOf('[ANALYSIS_COMPLETE]\n');
-      const citationsCompleteIndex = fullText.indexOf('[CITATIONS_COMPLETE]\n');
-      
-      if (analysisCompleteIndex !== -1) {
-        const jsonStart = analysisCompleteIndex + '[ANALYSIS_COMPLETE]\n'.length;
-        const jsonEnd = citationsCompleteIndex !== -1 ? citationsCompleteIndex : fullText.length;
-        const jsonText = fullText.substring(jsonStart, jsonEnd).trim();
-        
-        try {
-          analysisData = JSON.parse(jsonText);
-        } catch (e) {
-          console.error('Failed to parse complete analysis JSON:', e);
-          throw new Error('Failed to parse analysis data from response');
-        }
-      }
-    }
-
-    // Merge citations into analysis data
-    if (analysisData && citationsData) {
-      analysisData.citations = citationsData.citations;
-    }
-
     return {
-      streamingText: streamingText || 'Analysis in progress...',
+      streamingText: thinkingChunks.join('') + (contentChunks.length > 0 ? '\n\nTHINKING_COMPLETE\n\n' + contentChunks.join('') : ''),
       analysisData: analysisData || null
     };
   } catch (error) {
