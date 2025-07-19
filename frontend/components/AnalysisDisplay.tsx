@@ -379,11 +379,11 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingCon
                     <td className="border border-gray-200 px-4 py-3 text-sm font-medium text-gray-800">
                       {criterion.criterion}
                     </td>
-                    <td className="border border-gray-200 px-4 py-3 text-center">
+                    <td className={`border border-gray-200 px-4 py-3 text-center ${criterion.met ? 'bg-green-100' : 'bg-red-100'}`}>
                       {criterion.met ? (
-                        <CheckCircleIcon className="w-6 h-6 text-green-600 mx-auto" />
+                        <CheckCircleIcon className="w-6 h-6 text-green-700 mx-auto" />
                       ) : (
-                        <XCircleIcon className="w-6 h-6 text-red-600 mx-auto" />
+                        <XCircleIcon className="w-6 h-6 text-red-700 mx-auto" />
                       )}
                       <div className="text-xs mt-1 text-gray-600">{criterion.score}</div>
                     </td>
@@ -405,62 +405,6 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingCon
         </div>
       )}
 
-      {/* Citations Section */}
-      {(analysis.transcriptCitations || analysis.citations) && (
-        <div className="mt-8 space-y-6">
-          <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">References</h3>
-          
-          {/* Transcript Citations */}
-          {analysis.transcriptCitations && analysis.transcriptCitations.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="text-md font-semibold text-purple-800">Transcript Citations</h4>
-              <div className="space-y-2">
-                {analysis.transcriptCitations.map((citation) => (
-                  <div
-                    key={citation.marker}
-                    id={`citation-${citation.marker.replace(/[\[\]]/g, '')}`}
-                    className="p-3 bg-purple-50 border border-purple-200 rounded-lg text-sm"
-                  >
-                    <span className="inline-flex items-center justify-center w-6 h-6 text-xs bg-purple-200 text-purple-700 rounded-full mr-2">
-                      {citation.marker.replace(/[\[\]]/g, '')}
-                    </span>
-                    <span className="font-semibold capitalize">{citation.speaker}:</span> "{citation.quote}"
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Curriculum Citations */}
-          {analysis.citations && analysis.citations.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="text-md font-semibold text-blue-800">Curriculum References</h4>
-              <div className="space-y-2">
-                {analysis.citations.map((citation) => (
-                  <div
-                    key={citation.number}
-                    id={`citation-${citation.number}`}
-                    className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm"
-                  >
-                    <div className="flex items-start gap-2">
-                      <span className="inline-flex items-center justify-center w-6 h-6 text-xs bg-blue-200 text-blue-700 rounded-full flex-shrink-0">
-                        {citation.number}
-                      </span>
-                      <div className="flex-1">
-                        <div className="font-semibold text-blue-800">{citation.source}</div>
-                        {citation.pages && <div className="text-xs text-blue-600 mt-1">{citation.pages}</div>}
-                        {citation.text && (
-                          <div className="mt-2 text-slate-700 italic">"{citation.text}"</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 };
