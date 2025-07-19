@@ -1135,37 +1135,74 @@ export default function App() {
     }
 
     return (
-        <div className={`container ${contentVisible ? 'fade-in' : ''}`}>
-            <Header 
-                currentView={appState.currentView}
-                onViewChange={handleViewChange}
-                onTitleClick={handleGoHome}
-            />
-            <AboutCurriculumLink />
+        <div className={`container ${contentVisible ? 'fade-in' : ''}`} style={{
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
+            <div style={{ flex: 1 }}>
+                <Header 
+                    currentView={appState.currentView}
+                    onViewChange={handleViewChange}
+                    onTitleClick={handleGoHome}
+                />
+                <AboutCurriculumLink />
 
-            {appState.currentView === 'caseworker' ? (
-                <>
-                    {appState.page === 'home' && <HomePage onSelectPage={handlePageChange} />}
-                    {appState.page === 'scenario-selection' && <ScenarioSelectionPage onScenarioSelect={handleScenarioSelect} />}
-                    {appState.page === 'simulation' && <SimulationPage onComplete={handleSimulationComplete} />}
-                    {appState.page === 'simulation-with-scenario' && selectedScenario && (
-                        <SimulationPageWithScenario 
-                            scenario={selectedScenario} 
-                            onComplete={handleSimulationComplete} 
-                        />
-                    )}
-                    {appState.page === 'review' && (
-                        <ReviewPage 
-                            simulationTranscript={simulationTranscript}
-                            prefilledAssessment={prefilledSelfAssessment}
-                            onComplete={handleReviewComplete}
-                        />
-                    )}
-                    {appState.page === 'qa' && <QAPage />}
-                </>
-            ) : (
-                <SupervisorDashboard onBack={handleGoHome} />
-            )}
+                {appState.currentView === 'caseworker' ? (
+                    <>
+                        {appState.page === 'home' && <HomePage onSelectPage={handlePageChange} />}
+                        {appState.page === 'scenario-selection' && <ScenarioSelectionPage onScenarioSelect={handleScenarioSelect} />}
+                        {appState.page === 'simulation' && <SimulationPage onComplete={handleSimulationComplete} />}
+                        {appState.page === 'simulation-with-scenario' && selectedScenario && (
+                            <SimulationPageWithScenario 
+                                scenario={selectedScenario} 
+                                onComplete={handleSimulationComplete} 
+                            />
+                        )}
+                        {appState.page === 'review' && (
+                            <ReviewPage 
+                                simulationTranscript={simulationTranscript}
+                                prefilledAssessment={prefilledSelfAssessment}
+                                onComplete={handleReviewComplete}
+                            />
+                        )}
+                        {appState.page === 'qa' && <QAPage />}
+                    </>
+                ) : (
+                    <SupervisorDashboard onBack={handleGoHome} />
+                )}
+            </div>
+            
+            {/* Footer */}
+            <footer style={{
+                marginTop: 'var(--unit-10)',
+                paddingTop: 'var(--unit-8)',
+                paddingBottom: 'var(--unit-8)',
+                textAlign: 'center'
+            }}>
+                <div className="flex items-center gap-2" style={{
+                    justifyContent: 'center'
+                }}>
+                    <img 
+                        src="/google.png" 
+                        alt="Google logo" 
+                        className="h-6 w-auto"
+                        style={{ height: '24px', width: 'auto' }}
+                    />
+                    <span className="text-xs" style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--on-surface-variant)'
+                    }}>
+                        Built by <a href="mailto:gabbyburke@google.com" className="text-blue-300 hover:text-white transition-colors" style={{
+                            color: 'var(--primary)',
+                            textDecoration: 'none'
+                        }}>Gabby Burke</a> and <a href="mailto:williszhang@google.com" className="text-blue-300 hover:text-white transition-colors" style={{
+                            color: 'var(--primary)',
+                            textDecoration: 'none'
+                        }}>Willis Zhang</a>
+                    </span>
+                </div>
+            </footer>
         </div>
     );
 }
