@@ -98,14 +98,15 @@ const ThinkingBox: React.FC<ThinkingBoxProps> = ({
           }}>
             {(() => {
               if (responseContent) {
-                // Show response content if available
-                const responsePreview = responseContent.split('\n')[0];
-                const cleanResponse = responsePreview.replace(/\*\*/g, '');
+                const responseLines = responseContent.trim().split('\n');
+                const lastLine = responseLines[responseLines.length - 1];
+                const cleanResponse = lastLine.replace(/\*\*/g, '');
                 return `Response: ${cleanResponse}`;
               } else if (thinkingContent.length > 0) {
-                // Show thinking content
-                const latestContent = thinkingContent[thinkingContent.length - 1].split('\n')[0];
-                const cleanContent = latestContent.replace(/\*\*/g, '');
+                const latestContent = thinkingContent[thinkingContent.length - 1];
+                const contentLines = latestContent.trim().split('\n');
+                const lastLine = contentLines[contentLines.length - 1];
+                const cleanContent = lastLine.replace(/\*\*/g, '');
                 return cleanContent;
               } else {
                 return 'AI is analyzing...';

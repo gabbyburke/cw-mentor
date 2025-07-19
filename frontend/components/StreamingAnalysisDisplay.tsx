@@ -129,28 +129,6 @@ const StreamingAnalysisDisplay: React.FC<StreamingAnalysisDisplayProps> = ({
         </div>
       )}
 
-      {/* Final streaming content */}
-      {(thinkingComplete || !isThinking) && finalContent && (
-        <div 
-          className="prose prose-slate max-w-none"
-          style={{
-            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.06) 0%, rgba(59, 130, 246, 0.03) 100%)',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            border: '1px solid rgba(59, 130, 246, 0.15)',
-            borderRadius: '16px',
-            padding: '24px',
-            boxShadow: '0 8px 32px rgba(59, 130, 246, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
-          }}>
-          <div className="space-y-4">
-            {finalContent.split('\n\n').map((paragraph, index) => (
-              <p key={index} className="text-slate-700 leading-relaxed whitespace-pre-wrap">
-                {paragraph}
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Show placeholder if no content yet */}
       {!finalContent && !showThinking && (

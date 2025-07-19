@@ -612,15 +612,10 @@ const ReviewPage = ({
                                 // Extract thinking content
                                 const thinkingPart = parts[0].trim();
                                 if (thinkingPart) {
-                                    const thinkingParts = thinkingPart.split(/THINKING:/);
-                                    const thinkingSections: string[] = [];
-                                    
-                                    for (let i = 1; i < thinkingParts.length; i++) {
-                                        const section = thinkingParts[i].trim();
-                                        if (section) {
-                                            thinkingSections.push(section);
-                                        }
-                                    }
+                                    const thinkingSections = thinkingPart
+                                        .split(/\n\n+/)
+                                        .filter(section => section.trim())
+                                        .map(section => section.trim());
                                     
                                     if (thinkingSections.length > 0) {
                                         setSavedThinkingContent(thinkingSections);
