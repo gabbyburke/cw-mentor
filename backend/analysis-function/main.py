@@ -308,7 +308,7 @@ Respond with JSON in this exact format. Do not include any text outside the JSON
         # Configure generation with thinking mode and RAG grounding
         config = types.GenerateContentConfig(
             temperature=0.3,
-            max_output_tokens=8192,
+            max_output_tokens=32768,
             safety_settings=[
                 types.SafetySetting(
                     category="HARM_CATEGORY_HARASSMENT",
@@ -340,8 +340,13 @@ Respond with JSON in this exact format. Do not include any text outside the JSON
         def generate():
             """Generator function for streaming response"""
             chunk_index = 0
+            raw_stream_accumulator = []  # Accumulate all chunks for final logging
             
             try:
+                print("=" * 80)
+                print("RAW STREAMING OUTPUT START")
+                print("=" * 80)
+                
                 # Stream the response from the model
                 for chunk in client.models.generate_content_stream(
                     model=MODEL_NAME,
@@ -410,8 +415,28 @@ Respond with JSON in this exact format. Do not include any text outside the JSON
                             if candidate_data:
                                 chunk_data["candidates"].append(candidate_data)
                     
+                    # Store chunk in accumulator
+                    raw_stream_accumulator.append(json.dumps(chunk_data, ensure_ascii=False))
+                    
+                    # Print raw chunk for debugging in cloud logs
+                    print(json.dumps(chunk_data, ensure_ascii=False))
+                    
                     # Output raw JSON structure with newline delimiter
                     yield json.dumps(chunk_data, ensure_ascii=False) + "\n"
+                
+                # Print final summary of raw stream
+                print("\n" + "=" * 80)
+                print("RAW STREAMING OUTPUT COMPLETE")
+                print("=" * 80)
+                print(f"Total chunks: {chunk_index}")
+                print("=" * 80)
+                print("FULL RAW STREAM:")
+                print("=" * 80)
+                for chunk_str in raw_stream_accumulator:
+                    print(chunk_str)
+                print("=" * 80)
+                print("END OF RAW STREAMING OUTPUT")
+                print("=" * 80)
                 
                 logging.info(f"Streaming complete - total chunks: {chunk_index}")
                     

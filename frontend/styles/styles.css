@@ -1013,6 +1013,8 @@ select[multiple] option {
 .p-2 { padding: var(--unit-2); }
 .p-3 { padding: var(--unit-3); }
 .p-4 { padding: var(--unit-4); }
+.p-5 { padding: var(--unit-5); }
+.p-6 { padding: var(--unit-6); }
 
 .space-y-4 > * + * {
   margin-top: var(--unit-4);
@@ -1121,6 +1123,10 @@ select[multiple] option {
   list-style-position: inside;
 }
 
+.list-outside {
+  list-style-position: outside;
+}
+
 .w-full {
   width: 100%;
 }
@@ -1143,6 +1149,10 @@ select[multiple] option {
 
 .pr-2 {
   padding-right: var(--unit-2);
+}
+
+.pl-5 {
+  padding-left: var(--unit-5);
 }
 
 .pt-4 {

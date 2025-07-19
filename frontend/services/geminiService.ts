@@ -70,7 +70,7 @@ async function callCloudFunctionForAnalysis(
   assessment: SelfAssessment, 
   systemInstruction: string,
   onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean, groundingChunks?: any[], rawResponseChunks?: string[] }) => void
-): Promise<{ streamingText: string, analysisData: any }> {
+): Promise<{ streamingText: string, analysisData: any, rawResponseChunks: string[] }> {
   const requestBody = {
     action: 'analyze',
     transcript,
@@ -100,6 +100,7 @@ async function callCloudFunctionForAnalysis(
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let fullRawStream = '';
     let thinkingChunks: string[] = [];
     let contentChunks: string[] = [];
     let rawResponseChunks: string[] = [];
@@ -116,6 +117,7 @@ async function callCloudFunctionForAnalysis(
         
         // Decode the chunk and add to buffer
         const chunk = decoder.decode(value, { stream: true });
+        fullRawStream += chunk; // Accumulate raw stream
         buffer += chunk;
         
         // Process complete lines (newline-delimited JSON)
@@ -155,6 +157,8 @@ async function callCloudFunctionForAnalysis(
               // Process grounding metadata (usually in final chunk)
               if (candidate.grounding_metadata && candidate.grounding_metadata.grounding_chunks) {
                 groundingChunks = candidate.grounding_metadata.grounding_chunks;
+                // Also add the raw chunk containing grounding metadata for debugging
+                rawResponseChunks.push(line);
               }
             }
             
@@ -221,13 +225,18 @@ async function callCloudFunctionForAnalysis(
           console.error('Content:', fullContent);
         }
       }
+      
+      // Log the full raw stream for debugging
+      console.log("========================================\nRAW RESPONSE STREAM:\n========================================\n", fullRawStream);
+
     } finally {
       reader.releaseLock();
     }
 
     return {
       streamingText: thinkingChunks.join('') + (contentChunks.length > 0 ? '\n\nTHINKING_COMPLETE\n\n' + contentChunks.join('') : ''),
-      analysisData: analysisData || null
+      analysisData: analysisData || null,
+      rawResponseChunks: rawResponseChunks
     };
   } catch (error) {
     console.error('Cloud Function API error:', error);
@@ -238,10 +247,10 @@ async function callCloudFunctionForAnalysis(
 export async function analyzeCaseworkerPerformance(
   transcript: Message[], 
   assessment: SelfAssessment,
-  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean, rawResponseChunks?: string[] }) => void
-): Promise<CaseworkerAnalysis> {
+  onStreamUpdate?: (text: string, metadata?: { isThinking?: boolean, thinkingComplete?: boolean, groundingChunks?: any[], rawResponseChunks?: string[] }) => void
+): Promise<{ analysis: CaseworkerAnalysis, rawResponseChunks: string[] }> {
   try {
-    const { analysisData } = await callCloudFunctionForAnalysis(
+    const { analysisData, rawResponseChunks } = await callCloudFunctionForAnalysis(
       transcript, 
       assessment, 
       CASEWORKER_ANALYSIS_PROMPT, 
@@ -256,7 +265,10 @@ export async function analyzeCaseworkerPerformance(
     // analysis, including curriculum citations. We can return it directly.
     // The legacy conversion code below has been removed as it was stripping out
     // necessary data for tooltips.
-    return analysisData as CaseworkerAnalysis;
+    return {
+      analysis: analysisData as CaseworkerAnalysis,
+      rawResponseChunks: rawResponseChunks
+    };
   } catch (error) {
     console.error("Error analyzing caseworker performance:", error);
     if (error instanceof Error) {

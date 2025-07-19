@@ -603,7 +603,7 @@ const ReviewPage = ({
         setStage('caseworker-analysis');
         
         try {
-            const analysis = await analyzeCaseworkerPerformance(
+            const { analysis, rawResponseChunks } = await analyzeCaseworkerPerformance(
                 simulationTranscript, 
                 selfAssessment,
                 (text, metadata) => {
@@ -644,6 +644,7 @@ const ReviewPage = ({
                 }
             );
             setCaseworkerAnalysis(analysis);
+            setSavedRawResponseChunks(rawResponseChunks); // Save all raw chunks
             setIsStreaming(false);
             setStage('caseworker-analysis-complete');
             
