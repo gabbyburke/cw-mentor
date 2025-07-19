@@ -252,47 +252,11 @@ export async function analyzeCaseworkerPerformance(
       throw new Error('No analysis data received from server');
     }
     
-    const rawResponse = analysisData;
-    
-    // Check if response is already in the correct format
-    if (rawResponse.overallSummary && rawResponse.strengths && rawResponse.areasForImprovement) {
-      return rawResponse as CaseworkerAnalysis;
-    }
-    
-    // Convert from the current Cloud Function format to expected format
-    const convertedAnalysis: CaseworkerAnalysis = {
-      overallSummary: "Analysis completed based on Parent Interview Assessment criteria.",
-      strengths: [],
-      areasForImprovement: []
-    };
-    
-    // Extract information from the current format
-    Object.entries(rawResponse).forEach(([key, value]: [string, any]) => {
-      if (value && typeof value === 'object' && value.feedback) {
-        if (value.score && (value.score.toLowerCase().includes('good') || value.score.toLowerCase().includes('excellent'))) {
-          convertedAnalysis.strengths.push(`${key}: ${value.feedback}`);
-        } else {
-          convertedAnalysis.areasForImprovement.push({
-            area: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-            suggestion: value.feedback
-          });
-        }
-      }
-    });
-    
-    // Ensure we have at least some content
-    if (convertedAnalysis.strengths.length === 0) {
-      convertedAnalysis.strengths.push("Attempted to make contact with the client");
-    }
-    
-    if (convertedAnalysis.areasForImprovement.length === 0) {
-      convertedAnalysis.areasForImprovement.push({
-        area: "Communication",
-        suggestion: "Continue developing professional communication skills"
-      });
-    }
-    
-    return convertedAnalysis;
+    // The analysisData object from callCloudFunctionForAnalysis now contains the complete
+    // analysis, including curriculum citations. We can return it directly.
+    // The legacy conversion code below has been removed as it was stripping out
+    // necessary data for tooltips.
+    return analysisData as CaseworkerAnalysis;
   } catch (error) {
     console.error("Error analyzing caseworker performance:", error);
     if (error instanceof Error) {

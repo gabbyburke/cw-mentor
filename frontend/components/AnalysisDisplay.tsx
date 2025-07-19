@@ -20,6 +20,22 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingCon
   const [hoveredCitation, setHoveredCitation] = useState<string | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<TooltipPosition>({ top: 0, left: 0 });
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredCitation(null);
+    }, 200);
+  };
+
+  const handleTooltipEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+  };
   
   // Find citation data
   const findCitationData = (marker: string) => {
@@ -36,12 +52,16 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingCon
   
   // Handle tooltip positioning
   const handleMouseEnter = (event: React.MouseEvent, citationMarker: string) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setTooltipPosition({
-      top: rect.top + window.scrollY - 8, // Position above the citation
-      left: rect.left + rect.width / 2 + window.scrollX
-    });
-    setHoveredCitation(citationMarker);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setTooltipPosition({
+        top: event.pageY,
+        left: event.pageX
+      });
+      setHoveredCitation(citationMarker);
+    }, 100);
   };
   
   // Adjust tooltip position to prevent going off-screen
@@ -49,28 +69,21 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingCon
     if (hoveredCitation && tooltipRef.current) {
       const tooltip = tooltipRef.current;
       const rect = tooltip.getBoundingClientRect();
-      let newLeft = tooltipPosition.left - rect.width / 2;
-      let newTop = tooltipPosition.top - rect.height;
       
-      // Adjust if tooltip goes off right edge
+      // Position to the right of the cursor
+      let newLeft = tooltipPosition.left + 20;
+      let newTop = tooltipPosition.top;
+
+      // Adjust if it overflows the right edge
       if (newLeft + rect.width > window.innerWidth - 20) {
         newLeft = window.innerWidth - rect.width - 20;
       }
       
-      // Adjust if tooltip goes off left edge
-      if (newLeft < 20) {
-        newLeft = 20;
+      // Adjust if it overflows the bottom edge
+      if (newTop + rect.height > window.innerHeight - 20) {
+          newTop = window.innerHeight - rect.height - 20;
       }
-      
-      // If tooltip would go off top, position below instead
-      if (newTop < 20) {
-        const citationElement = document.querySelector(`[data-citation="${hoveredCitation}"]`);
-        if (citationElement) {
-          const citationRect = citationElement.getBoundingClientRect();
-          newTop = citationRect.bottom + window.scrollY + 8;
-        }
-      }
-      
+
       tooltip.style.left = `${newLeft}px`;
       tooltip.style.top = `${newTop}px`;
     }
@@ -98,7 +111,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingCon
       const matchIndex = match.index;
       const citationElements = citations.map((citationMarker, idx) => {
         const isTranscript = citationMarker.includes('T');
-        const displayNumber = citationMarker.replace('T', '');
+        const displayNumber = citationMarker;
         
         return (
           <React.Fragment key={`${matchIndex}-${idx}`}>
@@ -107,7 +120,7 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingCon
               data-citation={citationMarker}
               className={`citation-link ${isTranscript ? 'transcript' : 'curriculum'}`}
               onMouseEnter={(e) => handleMouseEnter(e, citationMarker)}
-              onMouseLeave={() => setHoveredCitation(null)}
+              onMouseLeave={handleMouseLeave}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -162,10 +175,14 @@ const AnalysisDisplay: React.FC<AnalysisDisplayProps> = ({ analysis, thinkingCon
       <div
         ref={tooltipRef}
         className="citation-tooltip"
+        onMouseEnter={handleTooltipEnter}
+        onMouseLeave={handleMouseLeave}
         style={{
           position: 'fixed',
           zIndex: 1000,
-          maxWidth: '450px',
+          width: '380px',
+          maxHeight: '450px',
+          overflowY: 'auto',
           backgroundColor: 'white',
           borderRadius: '12px',
           padding: '16px',
