@@ -98,7 +98,6 @@ body.dark {
 * {
   -webkit-tap-highlight-color: transparent;
   position: relative;
-  vertical-align: middle;
   color: inherit;
   margin: 0;
   padding: 0;
@@ -236,6 +235,19 @@ ul {
 li {
   margin-bottom: calc(var(--size) * 0.5);
   line-height: 1.6;
+  vertical-align: baseline;
+}
+
+/* Fix list item alignment */
+ul.list-disc li,
+ol li {
+  display: list-item;
+  vertical-align: baseline;
+}
+
+ul.list-disc li::marker,
+ol li::marker {
+  vertical-align: baseline;
 }
 
 /* Details */

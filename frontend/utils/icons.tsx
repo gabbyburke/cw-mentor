@@ -2,7 +2,18 @@ import React from 'react';
 
 // Google Symbol Icon Component
 const GoogleIcon = ({ name, className, style }: { name: string; className?: string; style?: React.CSSProperties }) => (
-  <span className={`icon ${className || ''}`} style={{ fontFamily: 'Google Symbols', ...style }}>
+  <span 
+    className={`icon ${className || ''}`} 
+    style={{ 
+      fontFamily: 'Google Symbols',
+      verticalAlign: 'middle',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      lineHeight: 1,
+      ...style 
+    }}
+  >
     {name}
   </span>
 );
