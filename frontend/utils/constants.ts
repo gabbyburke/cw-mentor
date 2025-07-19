@@ -40,40 +40,70 @@ export const SIMULATION_PREFILL_TRANSCRIPTS = {
     {
       quality: 'good',
       messages: [
-        { role: 'user' as const, parts: "Hello, I'm Willis from Child Protective Services. I'm here because we received a report concerning the welfare of the children in this home - Jasmine and Jasper. I need to speak with you and conduct a safety assessment. Are you Sara Cooper? May I come in so we can discuss this privately? I want to let you know that we take all reports seriously, and my primary concern is ensuring the safety and wellbeing of the children. This is a standard procedure when we receive reports, and I'd like to hear your perspective on the situation." },
-        { role: 'model' as const, parts: "Yes, I'm Sara Cooper. Come in. What's this about? Is everything okay with Jasmine and Jasper? Has Shawn done something?" },
-        { role: 'user' as const, parts: "Thank you for letting me in, Ms. Cooper. I can see you're concerned, and I want to be straightforward with you. We received a report from Jasmine's school indicating that she disclosed witnessing some concerning incidents at home involving violence between you and Shawn. *settles in, maintaining a calm, professional demeanor* I want you to know that I'm not here to make judgments or to take your children away immediately. My job is to assess the safety of Jasmine and Jasper and to understand what's been happening in your home. The report mentioned both domestic violence and possible substance use. Are the children here right now? I'll need to speak with you about the allegations, see the children to make sure they're safe, and then we'll discuss what support and resources might be available to help your family. Can you tell me about your relationship with Shawn and what's been going on lately? I know this is difficult, but I need to understand the situation from your perspective." },
-        { role: 'model' as const, parts: "Come in. Please. I... I know why you're here. Jasmine... she always talks a lot. Jasper is here, he's just napping in his crib. My mom took Jasmine to school.\n\nLook, I already told someone from your office that I've been using some stuff again. Shawn... he got me back into it. He pushed me. He said it was something we could do together. I know... I know I messed up. I just don't want to lose my kids again. I can't. I'll do anything. But Shawn, he's in jail now, right? He got arrested for drugs the other day. He was trying to blame me, saying it was my stuff. He always tries to blame me for everything. Our relationship... it's just complicated. He gets... stressed. It's been hard, but he's gone now. It's fine." },
-        { role: 'user' as const, parts: "I hear how difficult this has been for you, Sara. Thank you for being honest with me about what's happening. I can see that you care deeply about your children and don't want to lose them. That's a strength - your love for Jasmine and Jasper is clear. I also appreciate you sharing about the substance use. That takes courage. Is there anyone else in the home right now besides you and Jasper? And before we continue, I want to give you this pamphlet that explains your rights and what happens during a child protective services assessment. *hands over the 1536 pamphlet* Let me also check - do you or your children have any tribal affiliation or Native American heritage? This could provide additional rights and resources for your family." },
-        { role: 'model' as const, parts: "No, no tribal affiliation. It's just me and the baby here. My mom will be back with Jasmine after school. She helps me a lot. She's been trying to get me to leave Shawn for months. She was right. I should have listened. *takes the pamphlet* What happens now? Are you going to take my kids? I'll go to treatment, I'll do whatever you need." }
+        { role: 'user' as const, parts: "Knock, knock." },
+        { role: 'model' as const, parts: "Can I help you?" },
+        { role: 'user' as const, parts: "Hi, my name is Willis Thompson. I'm with the Oregon Department of Human Services, Child Welfare. Are you Sara Cooper?" },
+        { role: 'model' as const, parts: "Yes... What's this about?" },
+        { role: 'user' as const, parts: "Ms. Cooper, I'm here because we received a report concerning your children, Jasmine and Jasper. I have my ID here if you'd like to see it." },
+        { role: 'model' as const, parts: "A report? What kind of report? Is everything okay?" },
+        { role: 'user' as const, parts: "I understand this must be concerning. The report came from Jasmine's school. They had some concerns about things Jasmine mentioned. May I come in so we can talk privately?" },
+        { role: 'model' as const, parts: "I... What did she say? Did something happen at school?" },
+        { role: 'user' as const, parts: "She mentioned some incidents at home involving you and Shawn. I'd really like to hear your perspective on what's been happening. May I come in?" },
+        { role: 'model' as const, parts: "Oh God... Okay, come in. I knew this might happen. Jasmine talks a lot." },
+        { role: 'user' as const, parts: "Thank you for letting me in. Is there anyone else home right now?" },
+        { role: 'model' as const, parts: "Just me and the baby. Jasper's napping. My mom took Jasmine to school." },
+        { role: 'user' as const, parts: "I appreciate you talking with me. Can you tell me about your relationship with Shawn?" },
+        { role: 'model' as const, parts: "It's... complicated. Look, I know why you're here. He got arrested the other day. For drugs." },
+        { role: 'user' as const, parts: "I see. That must be difficult for you. How are you doing with all of this?" },
+        { role: 'model' as const, parts: "I've been... I've been using again. I'm not gonna lie. Shawn got me back into it. I already told someone from your office." },
+        { role: 'user' as const, parts: "Thank you for being honest with me. That takes courage. Tell me more about what's been going on." },
+        { role: 'model' as const, parts: "He said it was something we could do together. I know I messed up. I just... I can't lose my kids again. I'll do anything." },
+        { role: 'user' as const, parts: "I hear that you love your children very much. That's clear. Before we continue, I want to give you this pamphlet about your rights and the assessment process." },
+        { role: 'model' as const, parts: "Are you going to take them? Please, I'll go to treatment. My mom helps me a lot. She's been trying to get me to leave Shawn." },
+        { role: 'user' as const, parts: "Let's talk through everything step by step. First, do you or your children have any Native American or tribal heritage?" },
+        { role: 'model' as const, parts: "No, no tribal affiliation. What happens now?" }
       ]
     },
     // Poor performance example
     {
       quality: 'poor',
       messages: [
-        { role: 'user' as const, parts: "Hi, I'm from CPS. We got a call about your kids. I need to come in and look around." },
-        { role: 'model' as const, parts: "What? Who are you? Do you have some ID? What call?" },
-        { role: 'user' as const, parts: "Look, we know there's been violence in the home and drug use. Your daughter told her teacher. I need to see the kids now and check the house. This is serious." },
-        { role: 'model' as const, parts: "I don't have to let you in! You can't just show up here making accusations! Where's your warrant? My kids are fine!" },
-        { role: 'user' as const, parts: "Ma'am, if you don't cooperate, I'll have to call the police. We have reports of abuse and neglect. Do you really want to make this harder than it needs to be? Where's Shawn? Is he here?" },
-        { role: 'model' as const, parts: "Get off my property! You have no right! I'm calling my lawyer! My kids are at school where they're supposed to be, and you're harassing me! Shawn's not here, he's in jail, okay? Are you happy now?" },
-        { role: 'user' as const, parts: "So you admit Shawn's been arrested? What was he arrested for? And what about the drugs? Are you using too? I'm going to need to drug test you today." },
-        { role: 'model' as const, parts: "I'm not admitting anything! I want you to leave! I haven't done anything wrong! You people always assume the worst! Just because we've had some problems doesn't mean my kids aren't safe!" }
+        { role: 'user' as const, parts: "I'm from CPS. Open up." },
+        { role: 'model' as const, parts: "What? Who are you?" },
+        { role: 'user' as const, parts: "Child Protective Services. We got a call about your kids." },
+        { role: 'model' as const, parts: "I don't have to talk to you. Do you have a warrant?" },
+        { role: 'user' as const, parts: "Look, your daughter told her teacher about the violence and drugs. I need to come in now." },
+        { role: 'model' as const, parts: "She what? You can't just show up here! Where's your ID?" },
+        { role: 'user' as const, parts: "Here's my badge. Now let me in. This is serious." },
+        { role: 'model' as const, parts: "No! My kids are fine! Get off my property!" },
+        { role: 'user' as const, parts: "If you don't cooperate, I'll call the police. Is that what you want?" },
+        { role: 'model' as const, parts: "You're threatening me? I'm calling my lawyer!" },
+        { role: 'user' as const, parts: "Where's Shawn? Is he here? We know about the drugs." },
+        { role: 'model' as const, parts: "He's in jail, okay? Are you happy? Leave us alone!" },
+        { role: 'user' as const, parts: "So there are drugs in the home? Are you using too?" },
+        { role: 'model' as const, parts: "I'm not saying anything else! Get out!" }
       ]
     },
     // Mixed performance example
     {
       quality: 'mixed',
       messages: [
-        { role: 'user' as const, parts: "Hello, I'm John Smith from Child Welfare. Are you Sara Cooper? We received a concerning report about your children." },
-        { role: 'model' as const, parts: "Who? What report? Is something wrong?" },
-        { role: 'user' as const, parts: "I'm with the Department of Human Services. There was a report about some incidents involving your partner Shawn and concerns about the children's safety. Can I come in to discuss this?" },
-        { role: 'model' as const, parts: "I... I don't understand. What kind of incidents? Did something happen at school?" },
-        { role: 'user' as const, parts: "Your daughter Jasmine told someone at school about seeing violence at home. I really need to come in and make sure the children are safe. Are they here?" },
-        { role: 'model' as const, parts: "Violence? She must have misunderstood something. Can I see your ID first? I'm not just letting anyone in my house." },
-        { role: 'user' as const, parts: "*shows badge* Here's my identification. Look, I know this is stressful, but I'm just here to help. The report mentioned domestic violence and possible drug use. We need to address these concerns for the children's safety." },
-        { role: 'model' as const, parts: "Okay... come in. But Jasmine exaggerates sometimes. She's only 6. Jasper is sleeping in his room. Jasmine is at school. Things have been hard lately with Shawn, but it's not what you think." }
+        { role: 'user' as const, parts: "Hello, I'm John Smith from Child Welfare." },
+        { role: 'model' as const, parts: "Child Welfare? What's going on?" },
+        { role: 'user' as const, parts: "Are you Sara Cooper? We received a report about your children." },
+        { role: 'model' as const, parts: "A report? What kind of report?" },
+        { role: 'user' as const, parts: "It's about some incidents with your partner Shawn. Can I come in?" },
+        { role: 'model' as const, parts: "I... Can I see some ID first?" },
+        { role: 'user' as const, parts: "Of course. Here's my badge. The school called about Jasmine." },
+        { role: 'model' as const, parts: "What did she say? She sometimes exaggerates things." },
+        { role: 'user' as const, parts: "She mentioned violence at home. And possible drug use. Can we talk inside?" },
+        { role: 'model' as const, parts: "Violence? I mean... things have been hard. But it's not what you think." },
+        { role: 'user' as const, parts: "I understand. May I come in so we can discuss this?" },
+        { role: 'model' as const, parts: "I guess... okay. Come in. The baby's sleeping." },
+        { role: 'user' as const, parts: "Thank you. Are the children here now?" },
+        { role: 'model' as const, parts: "Jasper's napping. Jasmine's at school. Look, Shawn and I have had problems, but..." },
+        { role: 'user' as const, parts: "Can you tell me more about those problems?" },
+        { role: 'model' as const, parts: "He's... he's in jail right now. It's complicated." }
       ]
     }
   ],
@@ -82,28 +112,38 @@ export const SIMULATION_PREFILL_TRANSCRIPTS = {
     {
       quality: 'good',
       messages: [
-        { role: 'user' as const, parts: "Good afternoon. My name is Sarah Johnson, and I'm with the Oregon Department of Human Services, Child Welfare division. I'm looking for Larisa Baskin. Is that you? I have my identification here if you'd like to see it." },
-        { role: 'model' as const, parts: "Yes, I'm Larisa. What's this about? Is everything okay?" },
-        { role: 'user' as const, parts: "Ms. Baskin, I appreciate you taking the time to speak with me. I'm here because we received a report from Karina's school. They noticed she came to school with some injuries - specifically a black eye and a cut lip. I understand this must be concerning to hear, and I want you to know that I'm here to understand what happened and ensure your daughters are safe. May I come in so we can discuss this privately? I'd like to hear your perspective on the situation." },
-        { role: 'model' as const, parts: "Oh my God, they called you? It's not what it looks like! Please, come in. I can explain everything. Roger would never... Is Karina okay? Did she say something?" },
-        { role: 'user' as const, parts: "Thank you for inviting me in. I can see you're upset, and that's completely understandable. Any parent would be concerned. Let's sit down and talk through this together. First, is there anyone else home right now? And where is Katie, your younger daughter?" },
-        { role: 'model' as const, parts: "Katie's napping in her room. Roger's at work. He works construction. Look, Karina and Roger... they don't always get along. She's 14, you know how teenagers can be. She's been really defiant lately." },
-        { role: 'user' as const, parts: "I understand that teenage years can be challenging. You mentioned they don't always get along - can you tell me more about what happened with Karina's injuries? I'm here to listen and understand the full situation. Also, before we continue, I want to give you this information *hands pamphlet* about your rights and the assessment process. Do you or your children have any Native American or tribal heritage that I should be aware of?" },
-        { role: 'model' as const, parts: "No, no tribal heritage. *takes pamphlet nervously* Look, Karina... she's been staying out past curfew, talking back. Roger tries to discipline her, but she doesn't respect him. He's not her real dad. Last night, she came home at midnight when her curfew is 9. Roger confronted her and... things got heated. She tried to push past him to go to her room, and he grabbed her arm to stop her. She pulled away and fell, hit her face on the doorframe. It was an accident! He didn't mean to hurt her!" }
+        { role: 'user' as const, parts: "Good afternoon, are you Larisa Baskin?" },
+        { role: 'model' as const, parts: "Yes, I'm Larisa. Who are you?" },
+        { role: 'user' as const, parts: "My name is Sarah Johnson, I'm with the Oregon Department of Human Services, Child Welfare. I have my ID right here. I'm here because we received a report from Karina's school." },
+        { role: 'model' as const, parts: "The school? What's wrong? Is Karina okay?" },
+        { role: 'user' as const, parts: "They noticed she came to school with a black eye and a cut on her lip. I'd like to talk with you about it, if that's okay. May I come in?" },
+        { role: 'model' as const, parts: "Oh my God. Yes, please, come in. It's not what it looks like, I swear." },
+        { role: 'user' as const, parts: "Thank you. I can see this is upsetting for you. Is anyone else home right now?" },
+        { role: 'model' as const, parts: "No, just me and my younger daughter, Katie. She's napping. Roger, my boyfriend, is at work." },
+        { role: 'user' as const, parts: "Okay. I'd like to hear from you what happened. Can you tell me about Karina's injuries?" },
+        { role: 'model' as const, parts: "She and Roger... they argue a lot. She's 14, you know? She's been defiant, staying out late." },
+        { role: 'user' as const, parts: "It sounds like things have been tense. What happened last night?" },
+        { role: 'model' as const, parts: "She came home really late. Roger confronted her. They were yelling. She tried to push past him and he grabbed her arm." },
+        { role: 'user' as const, parts: "He grabbed her arm? And then what happened?" },
+        { role: 'model' as const, parts: "She pulled away from him and she fell... she hit her face on the doorframe. It was an accident! He didn't mean to hurt her." },
+        { role: 'user' as const, parts: "I understand this is difficult to talk about. Before we go further, I need to give you this pamphlet about your rights. Also, do you or your children have any Native American heritage?" },
+        { role: 'model' as const, parts: "No, no tribal heritage. *takes pamphlet* What does this mean? Are you going to take her away?" }
       ]
     },
     // Poor performance example  
     {
       quality: 'poor',
       messages: [
-        { role: 'user' as const, parts: "Are you Larisa? I'm here about your daughter's injuries. The school called us." },
-        { role: 'model' as const, parts: "What? What injuries? Who are you?" },
-        { role: 'user' as const, parts: "Child Protective Services. Karina came to school with a black eye. We know there's abuse happening here. Where is she?" },
-        { role: 'model' as const, parts: "Abuse? How dare you! There's no abuse in my home! You can't just come here accusing us of things!" },
-        { role: 'user' as const, parts: "The evidence is clear - she has visible injuries. Is Roger here? We know he's been hitting her. You need to protect your children." },
-        { role: 'model' as const, parts: "Get out! Roger is a good man! He would never hurt my girls! Karina is just clumsy, she fell! You people twist everything!" },
-        { role: 'user' as const, parts: "Falling doesn't cause black eyes. If you don't cooperate, we may have to remove the children for their safety. Where's your other daughter?" },
-        { role: 'model' as const, parts: "You're not taking my children! I'm calling the police! This is harassment! Leave my property now!" }
+        { role: 'user' as const, parts: "Larisa Baskin? I'm from CPS." },
+        { role: 'model' as const, parts: "What do you want?" },
+        { role: 'user' as const, parts: "The school called about Karina's black eye. I need to come in." },
+        { role: 'model' as const, parts: "Abuse? You think we're abusing her? No way." },
+        { role: 'user' as const, parts: "I didn't say that. But her injuries are clear. Is Roger here? I need to talk to him." },
+        { role: 'model' as const, parts: "He's at work! He's a good man, he wouldn't hurt her." },
+        { role: 'user' as const, parts: "Someone hurt her. If you don't let me in, I'll have to call for a police escort." },
+        { role: 'model' as const, parts: "You can't do that! She's just clumsy, she fell!" },
+        { role: 'user' as const, parts: "A fall doesn't cause a black eye and a cut lip. Where's your other daughter?" },
+        { role: 'model' as const, parts: "You're not seeing my kids! Get out of my house!" }
       ]
     }
   ],
@@ -112,14 +152,20 @@ export const SIMULATION_PREFILL_TRANSCRIPTS = {
     {
       quality: 'mixed',
       messages: [
-        { role: 'user' as const, parts: "Hi, I'm looking for Judith or Ted Rich. I'm from Child Welfare, and I need to speak with you about Daniel." },
-        { role: 'model' as const, parts: "I'm Judith. What about Daniel? Did something happen at school?" },
-        { role: 'user' as const, parts: "Mrs. Rich, the school contacted us because Daniel has been complaining about tooth pain for several months. They arranged dental appointments, but he hasn't attended them. We're concerned about medical neglect. Can we talk?" },
-        { role: 'model' as const, parts: "Medical neglect? That's ridiculous! We're good parents! The dental appointments... we've been meaning to take him, but things have been so hectic." },
-        { role: 'user' as const, parts: "I understand things can get busy. Can I come in so we can discuss this? I need to understand what's been happening and make sure all the children are getting their medical needs met." },
-        { role: 'model' as const, parts: "I guess... but I only have a few minutes. Ted's not home, he's working. The kids are fine, I don't know why the school is making such a big deal about this." },
-        { role: 'user' as const, parts: "Thank you. Are all three children home - Daniel, Alberto, and Emily? The report also mentioned some concerns about missed medical appointments for the younger children." },
-        { role: 'model' as const, parts: "The baby is here, she's sleeping. The boys are at school. Look, we've had some financial difficulties, okay? Dental work is expensive. We were trying to find a cheaper option. That doesn't make us bad parents!" }
+        { role: 'user' as const, parts: "Hi, are you Judith Rich?" },
+        { role: 'model' as const, parts: "Yes. Can I help you?" },
+        { role: 'user' as const, parts: "I'm from Child Welfare. I need to talk to you about Daniel." },
+        { role: 'model' as const, parts: "Daniel? Is he okay? Did something happen at school?" },
+        { role: 'user' as const, parts: "The school is concerned. They said he's had a toothache for months and missed dental appointments they set up." },
+        { role: 'model' as const, parts: "Medical neglect? That's not true! We're good parents." },
+        { role: 'user' as const, parts: "I'm not here to accuse you. I just need to understand what's going on. Can we talk inside?" },
+        { role: 'model' as const, parts: "I guess. But my husband isn't home. And I don't have much time." },
+        { role: 'user' as const, parts: "I understand. Are your other children, Alberto and Emily, here?" },
+        { role: 'model' as const, parts: "The baby's sleeping. Alberto's at school with Daniel." },
+        { role: 'user' as const, parts: "The report also mentioned they've missed some doctor's appointments." },
+        { role: 'model' as const, parts: "Look, it's been hard financially, okay? Dental work is expensive." },
+        { role: 'user' as const, parts: "I understand that. Are you currently on state health insurance?" },
+        { role: 'model' as const, parts: "We were, but I think it lapsed. It's all so confusing." }
       ]
     }
   ],
@@ -128,14 +174,24 @@ export const SIMULATION_PREFILL_TRANSCRIPTS = {
     {
       quality: 'good',
       messages: [
-        { role: 'user' as const, parts: "Good afternoon. My name is Maria Rodriguez, and I'm a caseworker with the Oregon Department of Human Services, Child Welfare. I'm looking for Tammy Tasi. Is that you? Here's my identification and business card." },
-        { role: 'model' as const, parts: "Yes, I'm Tammy. What's going on? Is everything alright?" },
-        { role: 'user' as const, parts: "Ms. Tasi, thank you for speaking with me. I'm here because we received a report concerning an incident between your children, Efren and Malia. The report indicated that Efren was physical with Malia, causing an injury to her eye. I know this must be difficult to hear, but I'm here to understand what happened from your perspective and to ensure both children are safe. Would it be alright if I came in so we can discuss this privately?" },
-        { role: 'model' as const, parts: "Oh no... someone called about that? It wasn't as bad as it sounds. Please, come in. They were just fighting over the computer. Kids, you know?" },
-        { role: 'user' as const, parts: "Thank you for inviting me in. Before we begin, is anyone else home right now? And where are Efren and Malia currently?" },
-        { role: 'model' as const, parts: "It's just me. The kids are both at school. They'll be home in about an hour. My girlfriend Cheryl might stop by later, she usually helps with the kids after school." },
-        { role: 'user' as const, parts: "I appreciate you letting me know. It sounds like Cheryl is a support for your family - that's wonderful. Can you tell me more about what happened between Efren and Malia? Take your time, and please share as much detail as you're comfortable with. Also, I want to give you this pamphlet that explains your rights and the assessment process. *hands over pamphlet* Do you or your children have any Native American or Alaska Native heritage?" },
-        { role: 'model' as const, parts: "No, no tribal affiliation. *takes pamphlet* It happened two days ago. They take turns on the computer for their games. Efren was trying to finish a level, but it was Malia's turn. She got impatient and just reached over and shut off the computer while he was playing. He got mad and pushed her away, and his hand accidentally caught her face. She had a red mark by her eye, but it was gone by the next morning. They've been bickering more lately since I've been working more hours. I feel terrible about it." }
+        { role: 'user' as const, parts: "Hi, are you Tammy Tasi?" },
+        { role: 'model' as const, parts: "Yes. Who are you?" },
+        { role: 'user' as const, parts: "My name is Maria Rodriguez, I'm with the Oregon Department of Human Services, Child Welfare. Here's my ID." },
+        { role: 'model' as const, parts: "Is everything okay?" },
+        { role: 'user' as const, parts: "I'm here about a report we received concerning an incident between Efren and Malia." },
+        { role: 'model' as const, parts: "Oh, no. Someone called about that? It was just a silly fight." },
+        { role: 'user' as const, parts: "The report mentioned Malia was injured. I'd like to hear what happened from your perspective. Could we talk inside?" },
+        { role: 'model' as const, parts: "It wasn't that bad. But... yes, come in." },
+        { role: 'user' as const, parts: "Thank you. Is anyone else home right now?" },
+        { role: 'model' as const, parts: "No, it's just me. The kids are at school." },
+        { role: 'user' as const, parts: "Can you tell me what happened during the fight?" },
+        { role: 'model' as const, parts: "They were arguing over the computer. It was Malia's turn, but Efren wouldn't get off." },
+        { role: 'user' as const, parts: "Okay, so they were arguing. What happened next?" },
+        { role: 'model' as const, parts: "She got mad and shut the computer off. He got angry and... pushed her away." },
+        { role: 'user' as const, parts: "And that's when she was injured?" },
+        { role: 'model' as const, parts: "Yes, his hand hit her cheek. It left a red mark, but it was gone the next day. It was an accident." },
+        { role: 'user' as const, parts: "I see. It sounds like things have been stressful. Before we continue, here is a pamphlet about your rights. I also need to ask if you or your children have any Native American or Alaska Native heritage." },
+        { role: 'model' as const, parts: "No, we don't. I've been working more hours lately, and they've been bickering a lot. I feel awful." }
       ]
     }
   ]
@@ -1155,72 +1211,36 @@ export const SELF_ASSESSMENT_EXAMPLES = [
         quality: 'good',
         description: 'Thoughtful and specific reflection',
         assessment: {
-            introduction: "I introduced myself as Sarah Johnson from the Oregon Department of Human Services, Child Welfare division. I showed my ID and provided a business card. I confirmed the parent's identity by asking 'Are you Sara Cooper?' before proceeding. I feel I did this well, maintaining a professional yet approachable demeanor. However, I realized I could have asked if she preferred to be called Sara or Ms. Cooper to show more respect for her preferences.",
-            reasonForContact: "I clearly stated we received a report about concerns for the children's safety, specifically mentioning the report from Jasmine's school about witnessing incidents at home. I tried to use neutral language like 'concerns' instead of 'allegations' to reduce defensiveness. I emphasized that I wanted to hear her perspective. Looking back, I could have been more empathetic in my delivery - perhaps acknowledging how difficult it must be to receive this visit.",
-            responsiveToParent: "When Sara became emotional and started talking about her substance use and relationship with Shawn, I listened without judgment and validated her feelings by saying 'I hear how difficult this has been for you.' I asked follow-up questions from a place of curiosity rather than interrogation. However, I noticed I interrupted her once when she was explaining about Shawn - I need to work on allowing complete responses before asking the next question.",
-            permissionToEnter: "I asked 'May I come in so we can discuss this privately?' and waited for her explicit consent. When she invited me in, I thanked her. I also asked if anyone else was home, which helped me understand who was present. I maintained appropriate boundaries by asking where she'd like me to sit. This felt natural and respectful.",
-            gatheringInformation: "I gathered information about multiple areas: the substance use issue, domestic violence concerns, support systems (her mother), and current safety (Shawn being in jail). I asked about tribal affiliation to ensure appropriate resources. However, I realize I didn't ask enough about the children's daily routines, medical needs, or school attendance. I was so focused on the immediate allegations that I missed gathering a more complete picture of the family's functioning.",
-            processAndNextSteps: "I provided the 1536 pamphlet and briefly explained it outlined her rights and the assessment process. I told her we would need to see the children and assess their safety, and discussed potential resources and support. However, I realize I wasn't specific enough about timelines - when I would need to see the children, how long the assessment might take, or when she could expect to hear from me again. This uncertainty might increase her anxiety."
+            introduction: "I introduced myself clearly with my full name and agency, and verified the parent's identity. I offered my ID proactively, which I think helped build a small amount of trust from the start. I feel this went well and set a professional tone.",
+            reasonForContact: "I explained the reason for my visit by referencing a report from the school, which is a less accusatory way to introduce the concern. I waited for her to ask questions before providing more detail, which allowed her to control the pace of the conversation. I think I handled her initial shock and questions well by remaining calm.",
+            responsiveToParent: "When Sara became emotional and disclosed her substance use, I tried to be validating by saying 'That takes courage.' I also acknowledged her love for her children as a strength. However, I could have explored her feelings more by asking something like, 'How has it been for you, managing all of this?' I also noticed I asked about tribal heritage right after a very emotional disclosure, which might have felt abrupt. I should work on better timing for procedural questions.",
+            permissionToEnter: "I asked for permission to enter the home multiple times, respecting her right to say no. I didn't push when she was hesitant, but instead provided more information to help her feel safe enough to agree. This seemed effective as she eventually let me in.",
+            gatheringInformation: "I asked open-ended questions like 'Can you tell me about your relationship with Shawn?' which led to her disclosing his arrest and her substance use. I also asked about who was in the home to assess immediate safety. My biggest area for improvement is gathering a broader picture; I didn't ask about the children's daily routines, their health, or what supports Sara has besides her mother.",
+            processAndNextSteps: "I provided the pamphlet and explained its purpose. I mentioned the next steps would be to talk through everything, but I wasn't very specific about what that would entail (e.g., seeing the children, developing a safety plan). I should have been clearer about the immediate next steps to reduce her anxiety about the unknown."
         }
     },
     {
         quality: 'mixed',
         description: 'Some insight but lacks depth',
         assessment: {
-            introduction: "I introduced myself with my name and said I was from Child Welfare. I showed my badge when asked. I think I did okay with this part, though maybe I could have been clearer about which department I was from.",
-            reasonForContact: "I told the parent there was a report about their child having injuries. I mentioned it came from the school. I tried not to sound too accusatory but I'm not sure if I succeeded. The parent seemed defensive so maybe my approach wasn't the best.",
-            responsiveToParent: "I listened to what the parent had to say about the incident. When they explained their version of events, I tried to show I was listening by nodding. I asked some follow-up questions. I think I did reasonably well here but could probably show more empathy.",
-            permissionToEnter: "I asked if I could come in to talk. They let me in, though they seemed reluctant. I probably should have been more reassuring about why I needed to come inside.",
-            gatheringInformation: "I asked about what happened with the injury, who lives in the home, and about their relationships. I got basic information but looking back, I didn't ask about a lot of important things like supports, other services involved, or family strengths. I was mostly focused on the incident itself.",
-            processAndNextSteps: "I gave them the pamphlet about their rights. I said we would continue to evaluate the situation. I mentioned I might need to talk to other people. I think I covered the basics but wasn't very specific about what would happen next or when."
+            introduction: "I said I was from Child Welfare and gave my name. I think I should have given the full agency name to be more professional. I did ask if she was Sara Cooper, which was good.",
+            reasonForContact: "I told her there was a report about her kids from the school. She got defensive, so maybe I was too direct. I mentioned it was about her partner Shawn, which focused the conversation.",
+            responsiveToParent: "I tried to listen to her. When she asked for my ID, I showed it. I could have been more empathetic when she said she was stressed, but I was focused on getting the facts about the report.",
+            permissionToEnter: "I asked to come in a few times. She eventually agreed. I probably could have explained why it was important to talk inside to make her more comfortable.",
+            gatheringInformation: "I asked about the violence and drug use mentioned in the report. I found out Shawn was in jail, which was a key piece of information for safety. I didn't ask much else about the family or their strengths.",
+            processAndNextSteps: "I didn't really explain the next steps. The conversation ended after I got the basic information. I should have told her what to expect next from me and from the agency."
         }
     },
     {
         quality: 'poor',
         description: 'Vague and lacks self-awareness',
         assessment: {
-            introduction: "I said who I was and why I was there. The parent seemed suspicious but I showed my ID. I think this went fine.",
-            reasonForContact: "I told them about the report. They got upset. Not sure what else I was supposed to do differently here.",
-            responsiveToParent: "I let them talk and explain their side. They were pretty defensive so it was hard to get information. I asked questions when I needed to.",
-            permissionToEnter: "They let me in after I asked. No problems with this part.",
-            gatheringInformation: "I asked about what happened and got the basic story. They said it was an accident. I asked who else lived there and about their relationship. Got what I needed I think.",
-            processAndNextSteps: "I gave them the form and said I'd be in touch. Told them this was standard procedure. Everything seemed clear enough."
-        }
-    },
-    {
-        quality: 'good',
-        description: 'Demonstrates strong self-awareness and specific insights',
-        assessment: {
-            introduction: "I stated my full name, agency (Oregon DHS Child Welfare), and immediately offered my identification without being asked - this seemed to help establish credibility. I verified I was speaking with the correct person by asking 'Are you Larisa Baskin?' I noticed that providing my business card along with my ID helped the parent feel this was official but not threatening. One area for improvement: I could have briefly mentioned that I'm a mandated reporter to be fully transparent about my role.",
-            reasonForContact: "I was direct but compassionate, saying 'We received a report from Karina's school because they noticed she came with some injuries - specifically a black eye and cut lip.' I immediately followed with 'I understand this must be concerning to hear, and I want you to know I'm here to understand what happened and ensure your daughters are safe.' This balance of transparency and empathy seemed to help. However, I could have asked 'How are you feeling hearing this?' to better gauge her emotional state.",
-            responsiveToParent: "When Larisa became defensive saying 'It's not what it looks like!' I responded with 'I can see you're upset, and that's completely understandable. Any parent would be concerned.' This validation helped de-escalate. I used reflective listening when she explained about teenage defiance, saying 'So you're saying Karina and Roger have been having conflicts around rules and boundaries?' However, when she described the physical altercation, I realize I showed some involuntary body language (tensing up) that she might have noticed. I need to work on maintaining neutral body language even when hearing concerning information.",
-            permissionToEnter: "I asked 'May I come in so we can discuss this privately?' and when she agreed, I thanked her. I also asked 'Is there anyone else home right now? And where is Katie, your younger daughter?' This helped me assess immediate safety and who was present. I respected her space by letting her choose where we sat. I think I handled this well, though I could have also asked if this was a good time or if she needed a few minutes to check on her younger child.",
-            gatheringInformation: "I used open-ended questions like 'Can you tell me more about what happened with Karina's injuries?' and 'You mentioned they don't always get along - can you tell me more about that?' I gathered info about the incident, family dynamics, Roger's role, and discipline methods. I also remembered to ask about tribal heritage for ICWA compliance. Areas I missed: I didn't ask about previous CPS involvement, domestic violence history between adults, substance use, or what supports the family has. I was so focused on the immediate incident that I missed the bigger picture.",
-            processAndNextSteps: "I provided the 1536 pamphlet saying 'This information explains your rights and the assessment process.' I clearly stated next steps: 'I'll need to speak with Karina when she returns from school, and I'll also need to see Katie to ensure she's safe. This assessment typically takes 30-60 days, and I'll be in regular contact with you throughout.' However, I realize I didn't ask if she had questions about the process or if she needed any immediate resources. I also should have given a more specific timeframe for when I'd next be in contact."
-        }
-    },
-    {
-        quality: 'mixed',
-        description: 'Shows some reflection but misses key elements',
-        assessment: {
-            introduction: "I introduced myself as being from Child Welfare and showed my badge. The parent asked for ID which I provided. I confirmed I was talking to the right person. I think this went reasonably well, though the parent seemed immediately suspicious when I said 'Child Welfare' - maybe I should have said the full department name to sound more official.",
-            reasonForContact: "I explained that the school had called about Daniel's tooth pain and missed dental appointments. I tried to be factual about it. The parent got defensive right away calling it 'ridiculous' so I'm not sure if my approach was too direct. Maybe I should have eased into it more or shown more understanding.",
-            responsiveToParent: "When they said they were good parents and had been meaning to take him but were busy, I said I understood things can get hectic. I tried to stay calm when they got defensive. I listened to their explanation about financial difficulties. I think I handled their emotions okay but maybe could have been more supportive.",
-            permissionToEnter: "I asked if I could come in to discuss it and they agreed, though reluctantly. They said they only had a few minutes which put some pressure on the conversation. Looking back, I should have acknowledged their time constraint and maybe asked if there was a better time to talk.",
-            gatheringInformation: "I asked if all three children were home and about the missed medical appointments. They told me about financial difficulties which was important context. But I realize now I didn't ask about medical insurance, what 'cheaper options' they were looking for, or if they'd tried applying for state healthcare. I also didn't ask about the children's overall health or other needs.",
-            processAndNextSteps: "I gave them the rights pamphlet but I don't think I explained it well - just handed it over. I mentioned we'd need to ensure the children's medical needs were met but wasn't specific about how. I should have talked about resources for low-cost dental care or helped them understand what services we could provide. The conversation ended abruptly because of their time constraint."
-        }
-    },
-    {
-        quality: 'poor',
-        description: 'Minimal reflection and defensive tone',
-        assessment: {
-            introduction: "I told them who I was and showed ID. The parent was difficult from the start, demanding to see identification. I handled it professionally.",
-            reasonForContact: "I explained about the report. The parent immediately got defensive which made my job harder. I stated the facts about what was reported. Not much else I could do when they're being uncooperative.",
-            responsiveToParent: "They kept arguing and making excuses. I remained professional and didn't argue back. It's hard to be responsive when someone is being so defensive and not accepting responsibility.",
-            permissionToEnter: "I asked to come in and they said yes, though they complained about only having a few minutes. At least they cooperated with letting me in.",
-            gatheringInformation: "I asked the necessary questions about where the children were and what happened. They gave me some information about financial problems. I got the basic facts I needed for my report.",
-            processAndNextSteps: "I gave them the required paperwork. They seemed in a rush to end the conversation so I wrapped it up. I'll follow up as needed per protocol."
+            introduction: "I said I was from CPS. The parent was difficult from the start and demanded a warrant.",
+            reasonForContact: "I told her I was there about a call we got. She didn't want to listen and just got angry.",
+            responsiveToParent: "It was hard to be responsive because she was yelling. I tried to tell her the seriousness of the situation, but she wouldn't cooperate.",
+            permissionToEnter: "She wouldn't let me in. I told her I would have to call the police if she didn't cooperate.",
+            gatheringInformation: "I couldn't gather much information because she was so resistant. I tried to ask about the violence and drugs but she just denied everything.",
+            processAndNextSteps: "We never got to this part because she kicked me out. I'm not sure what I could have done differently when a parent is that hostile."
         }
     }
 ];

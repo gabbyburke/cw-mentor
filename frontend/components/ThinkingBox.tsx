@@ -69,11 +69,15 @@ const ThinkingBox: React.FC<ThinkingBoxProps> = ({
             className="bg-gray-900 rounded-lg overflow-auto thinking-box-scroll"
             style={{ height: '350px', position: 'relative' }}
           >
-            <pre className="p-3 text-gray-100 whitespace-pre font-mono select-text" style={{ fontSize: '10px', lineHeight: '1.4', userSelect: 'text', minWidth: 'fit-content' }}>
+            <pre className="p-3 text-gray-100 whitespace-pre-wrap font-mono select-text" style={{ fontSize: '10px', lineHeight: '1.4', userSelect: 'text' }}>
               {thinkingContent.length > 0 && (
                 <>
                   <span style={{ color: '#9CA3AF' }}>{'======= THINKING =======\n\n'}</span>
-                  {thinkingContent.join('')}
+                  {thinkingContent.map((thought, index) => (
+                    <span key={index} style={{ display: 'block', marginBottom: '1em' }}>
+                      {thought}
+                    </span>
+                  ))}
                 </>
               )}
               {responseContent && (
