@@ -1300,3 +1300,21 @@ export const SELF_ASSESSMENT_EXAMPLES = [
         }
     }
 ];
+
+export const SUPERVISOR_FEEDBACK_EXAMPLES = {
+    cooper: [
+        "Great job introducing yourself and explaining the reason for your visit clearly and calmly. You showed a lot of empathy when Sara disclosed her substance use. One area to think about is how you transitioned to the procedural question about tribal heritage—it felt a bit abrupt. Maybe next time, you could pause and ask something like, 'How are you feeling after sharing that?' before moving on. Also, when discussing next steps, being more specific about what will happen (like seeing the kids or creating a safety plan) can help reduce the parent's anxiety.",
+        "Your approach was too aggressive from the start. Opening with 'I'm from CPS. Open up' immediately put the parent on the defensive. Threatening to call the police is a last resort and escalated the situation unnecessarily. For next time, focus on introducing yourself calmly, explaining the concern without accusatory language, and asking for permission to enter respectfully. Building a small amount of rapport is key, even when the situation is tense.",
+        "You did a good job of getting permission to enter and gathering some key information, like Shawn being in jail. However, your approach was very direct, which made the parent defensive. Try to use more open-ended questions to encourage the parent to share their story, rather than just confirming details from the report. For example, instead of stating 'She mentioned violence,' you could ask, 'Can you tell me about how things have been at home lately?'"
+    ],
+    baskin: [
+        "You handled a difficult situation with a lot of skill. You remained calm and professional, clearly stated the reason for your visit, and showed empathy for the parent's distress. You did well to ask open-ended questions to understand what happened from her perspective. A small suggestion for next time: when you provide the rights pamphlet, you could briefly explain its purpose to help demystify the process and build more trust.",
+        "This was a tough interaction. Your direct, authoritative approach ('I need to come in') and threatening a police escort created a power struggle and shut down the conversation. It's important to remember that parents have the right to refuse entry. In these situations, try to de-escalate by explaining the purpose of your visit is to understand their perspective and ensure the child is safe. Using a calmer, less confrontational tone can sometimes lead to more cooperation."
+    ],
+    rich: [
+        "You did a nice job of identifying the core issue of financial hardship and connecting it to the neglect allegations. Asking about their health insurance was a great, practical question. To improve, try to start with a more formal introduction (full agency name) to establish professionalism. Also, when a parent becomes defensive, showing more empathy can help. For instance, when she said, 'That's not true! We're good parents,' you could respond with, 'I hear that you care deeply for your children, and I'm here to understand the challenges you're facing.'"
+    ],
+    tasi: [
+        "Excellent work on this case. You introduced yourself professionally, explained the reason for contact clearly, and showed empathy for the parent's situation. You asked good, open-ended questions to gather information about the incident and the family dynamics. Your transition to the rights pamphlet and the ICWA question was smooth. The only small point of feedback is to be prepared to explain what the next steps in the process will be, as parents are often anxious to know what to expect."
+    ]
+};

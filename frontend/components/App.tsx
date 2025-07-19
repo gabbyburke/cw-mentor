@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { AppState, Message, Page, SelfAssessment, CaseworkerAnalysis, SupervisorAnalysis } from '../types/types';
 import { createChatSession, createMentorshipChatSession, createSimulationChatSession, analyzeCaseworkerPerformance, analyzeSupervisorCoaching } from '../services/geminiService';
-import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS, SIMULATION_PREFILL_EXAMPLES, SELF_ASSESSMENT_EXAMPLES } from '../utils/constants';
+import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS, SIMULATION_PREFILL_EXAMPLES, SELF_ASSESSMENT_EXAMPLES, SUPERVISOR_FEEDBACK_EXAMPLES } from '../utils/constants';
 import { 
     BotIcon, UserIcon, SendIcon, SparklesIcon, ClipboardIcon, 
     CheckCircleIcon, LightbulbIcon, ChatBubbleLeftRightIcon, QuestionMarkCircleIcon,
@@ -839,6 +839,39 @@ const SupervisorDashboard = ({ onBack }: { onBack: () => void }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'input' | 'results'>('input');
+    const [selectedTranscriptIndex, setSelectedTranscriptIndex] = useState<number | null>(null);
+
+    // Prepare historical transcripts for the dropdown
+    const historicalTranscripts = Object.entries(SIMULATION_PREFILL_EXAMPLES).flatMap(([scenarioId, examples]) => 
+        examples.map((ex, index) => {
+            const feedbackKey = scenarioId as keyof typeof SUPERVISOR_FEEDBACK_EXAMPLES;
+            return {
+                name: `${scenarioId.charAt(0).toUpperCase() + scenarioId.slice(1)} Family - Example ${index + 1}`,
+                transcript: ex.messages.map(msg => `${msg.role === 'user' ? 'Caseworker' : 'Parent'}: ${msg.parts}`).join('\n'),
+                feedback: SUPERVISOR_FEEDBACK_EXAMPLES[feedbackKey]?.[index] || ''
+            };
+        })
+    );
+
+    const handleTranscriptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedIndex = e.target.selectedIndex;
+        if (selectedIndex > 0) {
+            const selectedExample = historicalTranscripts[selectedIndex - 1];
+            setTranscriptInput(selectedExample.transcript);
+            setSelectedTranscriptIndex(selectedIndex - 1);
+        } else {
+            setTranscriptInput('');
+            setSelectedTranscriptIndex(null);
+        }
+        setSupervisorFeedback(''); // Clear feedback on any dropdown change
+    };
+
+    const handlePrefill = () => {
+        if (selectedTranscriptIndex !== null) {
+            const selectedExample = historicalTranscripts[selectedTranscriptIndex];
+            setSupervisorFeedback(selectedExample.feedback);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -883,51 +916,76 @@ const SupervisorDashboard = ({ onBack }: { onBack: () => void }) => {
             )}
 
             {viewMode === 'input' ? (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="card">
-                        <h2 className="h3 mb-4">Supervisor Coaching Practice</h2>
-                        <p className="text-slate-600 mb-6">
-                            Practice providing effective feedback to caseworkers. Enter a simulation transcript and your coaching feedback, then receive AI analysis on your supervisory approach.
-                        </p>
-
-                        <div className="space-y-4">
-                            <div>
-                                <label htmlFor="transcript" className="block text-sm font-medium text-slate-700 mb-1">
-                                    Simulation Transcript
-                                </label>
-                                <textarea
-                                    id="transcript"
-                                    rows={8}
-                                    required
-                                    value={transcriptInput}
-                                    onChange={(e) => setTranscriptInput(e.target.value)}
-                                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Paste the conversation transcript between the caseworker and parent..."
-                                />
-                            </div>
-
-                            <div>
-                                <label htmlFor="feedback" className="block text-sm font-medium text-slate-700 mb-1">
-                                    Your Supervisor Feedback
-                                </label>
-                                <textarea
-                                    id="feedback"
-                                    rows={6}
-                                    required
-                                    value={supervisorFeedback}
-                                    onChange={(e) => setSupervisorFeedback(e.target.value)}
-                                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Write your coaching feedback for the caseworker..."
-                                />
-                            </div>
+                <form onSubmit={handleSubmit} className="self-assessment-form">
+                    <h3 className="assessment-title">Supervisor Coaching Practice</h3>
+                    <p className="assessment-subtitle">
+                        Practice providing effective feedback. Enter a transcript and your coaching notes, then get AI analysis on your supervisory approach.
+                    </p>
+                    <div className="assessment-criteria-container">
+                        <div className="assessment-criterion">
+                            <label className="criterion-label" htmlFor="transcript-select">
+                                Simulation Transcript
+                            </label>
+                            <p className="criterion-description">Select a historical transcript or paste one into the text area below.</p>
+                            <select
+                                id="transcript-select"
+                                onChange={handleTranscriptChange}
+                                className="criterion-select"
+                                style={{ marginBottom: 'var(--unit-3)' }}
+                            >
+                                <option value="">Select a transcript...</option>
+                                {historicalTranscripts.map((item, index) => (
+                                    <option key={index} value={item.transcript}>
+                                        {item.name}
+                                    </option>
+                                ))}
+                            </select>
+                            <textarea
+                                id="transcript"
+                                rows={8}
+                                required
+                                value={transcriptInput}
+                                onChange={(e) => setTranscriptInput(e.target.value)}
+                                className="criterion-textarea"
+                                placeholder="The selected transcript will appear here, or you can paste your own."
+                            />
                         </div>
 
+                        <div className="assessment-criterion">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--unit-2)' }}>
+                                <label className="criterion-label" htmlFor="feedback" style={{ marginBottom: 0 }}>
+                                    Your Supervisor Feedback
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={handlePrefill}
+                                    className="glossy-chip-surface"
+                                    disabled={selectedTranscriptIndex === null}
+                                >
+                                    <MagicWandIcon className="w-4 h-4" />
+                                    <span>Prefill Example</span>
+                                </button>
+                            </div>
+                            <p className="criterion-description">Write your coaching feedback for the caseworker based on the transcript above.</p>
+                            <textarea
+                                id="feedback"
+                                rows={6}
+                                required
+                                value={supervisorFeedback}
+                                onChange={(e) => setSupervisorFeedback(e.target.value)}
+                                className="criterion-textarea"
+                                placeholder="e.g., 'Great job building rapport. For next time, let's focus on asking more open-ended questions to gather details.'"
+                            />
+                        </div>
+                    </div>
+                    <div className="assessment-submit-container">
                         <button
                             type="submit"
-                            className="btn-primary mt-6"
+                            className="btn-submit-assessment"
                             disabled={!transcriptInput.trim() || !supervisorFeedback.trim()}
                         >
-                            Get AI Analysis
+                            <SparklesIcon className="w-5 h-5" />
+                            Get AI analysis
                         </button>
                     </div>
                 </form>
