@@ -34,7 +34,7 @@ export const ASSESSMENT_CRITERIA = [
 ];
 
 // Prefill example transcripts for simulations
-export const SIMULATION_PREFILL_TRANSCRIPTS = {
+export const SIMULATION_PREFILL_EXAMPLES = {
   cooper: [
     // Good performance example
     {
@@ -62,7 +62,15 @@ export const SIMULATION_PREFILL_TRANSCRIPTS = {
         { role: 'model' as const, parts: "Are you going to take them? Please, I'll go to treatment. My mom helps me a lot. She's been trying to get me to leave Shawn." },
         { role: 'user' as const, parts: "Let's talk through everything step by step. First, do you or your children have any Native American or tribal heritage?" },
         { role: 'model' as const, parts: "No, no tribal affiliation. What happens now?" }
-      ]
+      ],
+      assessment: {
+        introduction: "I introduced myself clearly with my full name and agency, and verified the parent's identity. I offered my ID proactively, which I think helped build a small amount of trust from the start. I feel this went well and set a professional tone.",
+        reasonForContact: "I explained the reason for my visit by referencing a report from the school, which is a less accusatory way to introduce the concern. I waited for her to ask questions before providing more detail, which allowed her to control the pace of the conversation. I think I handled her initial shock and questions well by remaining calm.",
+        responsiveToParent: "When Sara became emotional and disclosed her substance use, I tried to be validating by saying 'That takes courage.' I also acknowledged her love for her children as a strength. However, I could have explored her feelings more by asking something like, 'How has it been for you, managing all of this?' I also noticed I asked about tribal heritage right after a very emotional disclosure, which might have felt abrupt. I should work on better timing for procedural questions.",
+        permissionToEnter: "I asked for permission to enter the home multiple times, respecting her right to say no. I didn't push when she was hesitant, but instead provided more information to help her feel safe enough to agree. This seemed effective as she eventually let me in.",
+        gatheringInformation: "I asked open-ended questions like 'Can you tell me about your relationship with Shawn?' which led to her disclosing his arrest and her substance use. I also asked about who was in the home to assess immediate safety. My biggest area for improvement is gathering a broader picture; I didn't ask about the children's daily routines, their health, or what supports Sara has besides her mother.",
+        processAndNextSteps: "I provided the pamphlet and explained its purpose. I mentioned the next steps would be to talk through everything, but I wasn't very specific about what that would entail (e.g., seeing the children, developing a safety plan). I should have been clearer about the immediate next steps to reduce her anxiety about the unknown."
+      }
     },
     // Poor performance example
     {
@@ -82,7 +90,15 @@ export const SIMULATION_PREFILL_TRANSCRIPTS = {
         { role: 'model' as const, parts: "He's in jail, okay? Are you happy? Leave us alone!" },
         { role: 'user' as const, parts: "So there are drugs in the home? Are you using too?" },
         { role: 'model' as const, parts: "I'm not saying anything else! Get out!" }
-      ]
+      ],
+      assessment: {
+        introduction: "I said I was from CPS. The parent was difficult from the start and demanded a warrant.",
+        reasonForContact: "I told her I was there about a call we got. She didn't want to listen and just got angry.",
+        responsiveToParent: "It was hard to be responsive because she was yelling. I tried to tell her the seriousness of the situation, but she wouldn't cooperate.",
+        permissionToEnter: "She wouldn't let me in. I told her I would have to call the police if she didn't cooperate.",
+        gatheringInformation: "I couldn't gather much information because she was so resistant. I tried to ask about the violence and drugs but she just denied everything.",
+        processAndNextSteps: "We never got to this part because she kicked me out. I'm not sure what I could have done differently when a parent is that hostile."
+      }
     },
     // Mixed performance example
     {
@@ -104,7 +120,15 @@ export const SIMULATION_PREFILL_TRANSCRIPTS = {
         { role: 'model' as const, parts: "Jasper's napping. Jasmine's at school. Look, Shawn and I have had problems, but..." },
         { role: 'user' as const, parts: "Can you tell me more about those problems?" },
         { role: 'model' as const, parts: "He's... he's in jail right now. It's complicated." }
-      ]
+      ],
+      assessment: {
+        introduction: "I said I was from Child Welfare and gave my name. I think I should have given the full agency name to be more professional. I did ask if she was Sara Cooper, which was good.",
+        reasonForContact: "I told her there was a report about her kids from the school. She got defensive, so maybe I was too direct. I mentioned it was about her partner Shawn, which focused the conversation.",
+        responsiveToParent: "I tried to listen to her. When she asked for my ID, I showed it. I could have been more empathetic when she said she was stressed, but I was focused on getting the facts about the report.",
+        permissionToEnter: "I asked to come in a few times. She eventually agreed. I probably could have explained why it was important to talk inside to make her more comfortable.",
+        gatheringInformation: "I asked about the violence and drug use mentioned in the report. I found out Shawn was in jail, which was a key piece of information for safety. I didn't ask much else about the family or their strengths.",
+        processAndNextSteps: "I didn't really explain the next steps. The conversation ended after I got the basic information. I should have told her what to expect next from me and from the agency."
+      }
     }
   ],
   baskin: [
@@ -128,7 +152,15 @@ export const SIMULATION_PREFILL_TRANSCRIPTS = {
         { role: 'model' as const, parts: "She pulled away from him and she fell... she hit her face on the doorframe. It was an accident! He didn't mean to hurt her." },
         { role: 'user' as const, parts: "I understand this is difficult to talk about. Before we go further, I need to give you this pamphlet about your rights. Also, do you or your children have any Native American heritage?" },
         { role: 'model' as const, parts: "No, no tribal heritage. *takes pamphlet* What does this mean? Are you going to take her away?" }
-      ]
+      ],
+      assessment: {
+        introduction: "I introduced myself clearly with my full name and agency, and verified the parent's identity. I offered my ID proactively, which I think helped build a small amount of trust from the start. I feel this went well and set a professional tone.",
+        reasonForContact: "I explained the reason for my visit by referencing a report from the school, which is a less accusatory way to introduce the concern. I waited for her to ask questions before providing more detail, which allowed her to control the pace of the conversation. I think I handled her initial shock and questions well by remaining calm.",
+        responsiveToParent: "When Sara became emotional and disclosed her substance use, I tried to be validating by saying 'That takes courage.' I also acknowledged her love for her children as a strength. However, I could have explored her feelings more by asking something like, 'How has it been for you, managing all of this?' I also noticed I asked about tribal heritage right after a very emotional disclosure, which might have felt abrupt. I should work on better timing for procedural questions.",
+        permissionToEnter: "I asked for permission to enter the home multiple times, respecting her right to say no. I didn't push when she was hesitant, but instead provided more information to help her feel safe enough to agree. This seemed effective as she eventually let me in.",
+        gatheringInformation: "I asked open-ended questions like 'Can you tell me about your relationship with Shawn?' which led to her disclosing his arrest and her substance use. I also asked about who was in the home to assess immediate safety. My biggest area for improvement is gathering a broader picture; I didn't ask about the children's daily routines, their health, or what supports Sara has besides her mother.",
+        processAndNextSteps: "I provided the pamphlet and explained its purpose. I mentioned the next steps would be to talk through everything, but I wasn't very specific about what that would entail (e.g., seeing the children, developing a safety plan). I should have been clearer about the immediate next steps to reduce her anxiety about the unknown."
+      }
     },
     // Poor performance example  
     {
@@ -144,7 +176,15 @@ export const SIMULATION_PREFILL_TRANSCRIPTS = {
         { role: 'model' as const, parts: "You can't do that! She's just clumsy, she fell!" },
         { role: 'user' as const, parts: "A fall doesn't cause a black eye and a cut lip. Where's your other daughter?" },
         { role: 'model' as const, parts: "You're not seeing my kids! Get out of my house!" }
-      ]
+      ],
+      assessment: {
+        introduction: "I said I was from CPS. The parent was difficult from the start and demanded a warrant.",
+        reasonForContact: "I told her I was there about a call we got. She didn't want to listen and just got angry.",
+        responsiveToParent: "It was hard to be responsive because she was yelling. I tried to tell her the seriousness of the situation, but she wouldn't cooperate.",
+        permissionToEnter: "She wouldn't let me in. I told her I would have to call the police if she didn't cooperate.",
+        gatheringInformation: "I couldn't gather much information because she was so resistant. I tried to ask about the violence and drugs but she just denied everything.",
+        processAndNextSteps: "We never got to this part because she kicked me out. I'm not sure what I could have done differently when a parent is that hostile."
+      }
     }
   ],
   rich: [
@@ -166,7 +206,15 @@ export const SIMULATION_PREFILL_TRANSCRIPTS = {
         { role: 'model' as const, parts: "Look, it's been hard financially, okay? Dental work is expensive." },
         { role: 'user' as const, parts: "I understand that. Are you currently on state health insurance?" },
         { role: 'model' as const, parts: "We were, but I think it lapsed. It's all so confusing." }
-      ]
+      ],
+      assessment: {
+        introduction: "I said I was from Child Welfare and gave my name. I think I should have given the full agency name to be more professional. I did ask if she was Sara Cooper, which was good.",
+        reasonForContact: "I told her there was a report about her kids from the school. She got defensive, so maybe I was too direct. I mentioned it was about her partner Shawn, which focused the conversation.",
+        responsiveToParent: "I tried to listen to her. When she asked for my ID, I showed it. I could have been more empathetic when she said she was stressed, but I was focused on getting the facts about the report.",
+        permissionToEnter: "I asked to come in a few times. She eventually agreed. I probably could have explained why it was important to talk inside to make her more comfortable.",
+        gatheringInformation: "I asked about the violence and drug use mentioned in the report. I found out Shawn was in jail, which was a key piece of information for safety. I didn't ask much else about the family or their strengths.",
+        processAndNextSteps: "I didn't really explain the next steps. The conversation ended after I got the basic information. I should have told her what to expect next from me and from the agency."
+      }
     }
   ],
   tasi: [
@@ -192,7 +240,15 @@ export const SIMULATION_PREFILL_TRANSCRIPTS = {
         { role: 'model' as const, parts: "Yes, his hand hit her cheek. It left a red mark, but it was gone the next day. It was an accident." },
         { role: 'user' as const, parts: "I see. It sounds like things have been stressful. Before we continue, here is a pamphlet about your rights. I also need to ask if you or your children have any Native American or Alaska Native heritage." },
         { role: 'model' as const, parts: "No, we don't. I've been working more hours lately, and they've been bickering a lot. I feel awful." }
-      ]
+      ],
+      assessment: {
+        introduction: "I introduced myself clearly with my full name and agency, and verified the parent's identity. I offered my ID proactively, which I think helped build a small amount of trust from the start. I feel this went well and set a professional tone.",
+        reasonForContact: "I explained the reason for my visit by referencing a report from the school, which is a less accusatory way to introduce the concern. I waited for her to ask questions before providing more detail, which allowed her to control the pace of the conversation. I think I handled her initial shock and questions well by remaining calm.",
+        responsiveToParent: "When Sara became emotional and disclosed her substance use, I tried to be validating by saying 'That takes courage.' I also acknowledged her love for her children as a strength. However, I could have explored her feelings more by asking something like, 'How has it been for you, managing all of this?' I also noticed I asked about tribal heritage right after a very emotional disclosure, which might have felt abrupt. I should work on better timing for procedural questions.",
+        permissionToEnter: "I asked for permission to enter the home multiple times, respecting her right to say no. I didn't push when she was hesitant, but instead provided more information to help her feel safe enough to agree. This seemed effective as she eventually let me in.",
+        gatheringInformation: "I asked open-ended questions like 'Can you tell me about your relationship with Shawn?' which led to her disclosing his arrest and her substance use. I also asked about who was in the home to assess immediate safety. My biggest area for improvement is gathering a broader picture; I didn't ask about the children's daily routines, their health, or what supports Sara has besides her mother.",
+        processAndNextSteps: "I provided the pamphlet and explained its purpose. I mentioned the next steps would be to talk through everything, but I wasn't very specific about what that would entail (e.g., seeing the children, developing a safety plan). I should have been clearer about the immediate next steps to reduce her anxiety about the unknown."
+      }
     }
   ]
 };

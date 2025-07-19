@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import type { AppState, Message, Page, SelfAssessment, CaseworkerAnalysis, SupervisorAnalysis } from '../types/types';
 import { createChatSession, createMentorshipChatSession, createSimulationChatSession, analyzeCaseworkerPerformance, analyzeSupervisorCoaching } from '../services/geminiService';
-import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS, SIMULATION_PREFILL_TRANSCRIPTS, SELF_ASSESSMENT_EXAMPLES } from '../utils/constants';
+import { ASSESSMENT_CRITERIA, SIMULATION_SYSTEM_PROMPT, GENERAL_QA_SYSTEM_PROMPT, SIMULATION_SCENARIOS, SIMULATION_PREFILL_EXAMPLES, SELF_ASSESSMENT_EXAMPLES } from '../utils/constants';
 import { 
     BotIcon, UserIcon, SendIcon, SparklesIcon, ClipboardIcon, 
     CheckCircleIcon, LightbulbIcon, ChatBubbleLeftRightIcon, QuestionMarkCircleIcon,
@@ -403,7 +403,7 @@ const ScenarioSelectionPage = ({ onScenarioSelect }: { onScenarioSelect: (scenar
     );
 };
 
-const SimulationPage = ({ onComplete }: { onComplete: (transcript: Message[]) => void }) => {
+const SimulationPage = ({ onComplete }: { onComplete: (transcript: Message[], assessment: SelfAssessment | null) => void }) => {
     const [chatSession] = useState(() => createChatSession(SIMULATION_SYSTEM_PROMPT));
     const [history, setHistory] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -446,7 +446,7 @@ const SimulationPage = ({ onComplete }: { onComplete: (transcript: Message[]) =>
              {(isFinished || history.length >= 10) && (
                  <div className="mt-4 text-center">
                     <button 
-                        onClick={() => onComplete(history)}
+                        onClick={() => onComplete(history, null)}
                         className="btn-glossy-blue"
                     >
                         Finish and begin self-assessment
@@ -457,12 +457,13 @@ const SimulationPage = ({ onComplete }: { onComplete: (transcript: Message[]) =>
     );
 };
 
-const SimulationPageWithScenario = ({ scenario, onComplete }: { scenario: typeof SIMULATION_SCENARIOS[0], onComplete: (transcript: Message[]) => void }) => {
+const SimulationPageWithScenario = ({ scenario, onComplete }: { scenario: typeof SIMULATION_SCENARIOS[0], onComplete: (transcript: Message[], assessment: SelfAssessment | null) => void }) => {
     const [chatSession] = useState(() => createSimulationChatSession(scenario.id));
     const [history, setHistory] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isFinished, setIsFinished] = useState(false);
     const [hasPrefilled, setHasPrefilled] = useState(false);
+    const [prefilledAssessment, setPrefilledAssessment] = useState<SelfAssessment | null>(null);
 
     const handleSendMessage = useCallback(async (message: string) => {
         setIsLoading(true);
@@ -489,15 +490,15 @@ const SimulationPageWithScenario = ({ scenario, onComplete }: { scenario: typeof
     }, [chatSession]);
 
     const handlePrefillExample = useCallback(() => {
-        // Get available transcripts for this scenario
-        const scenarioTranscripts = SIMULATION_PREFILL_TRANSCRIPTS[scenario.id as keyof typeof SIMULATION_PREFILL_TRANSCRIPTS];
-        if (!scenarioTranscripts || scenarioTranscripts.length === 0) return;
+        const scenarioExamples = SIMULATION_PREFILL_EXAMPLES[scenario.id as keyof typeof SIMULATION_PREFILL_EXAMPLES];
+        if (!scenarioExamples || scenarioExamples.length === 0) return;
 
-        // Select a random transcript
-        const randomTranscript = scenarioTranscripts[Math.floor(Math.random() * scenarioTranscripts.length)];
+        // Select a random example
+        const randomExample = scenarioExamples[Math.floor(Math.random() * scenarioExamples.length)];
         
-        // Set the history to the prefilled messages (excluding the initial greeting)
-        setHistory(randomTranscript.messages);
+        // Set the history and the corresponding assessment
+        setHistory(randomExample.messages);
+        setPrefilledAssessment(randomExample.assessment);
         setHasPrefilled(true);
         
         // Mark as finished since these are complete examples
@@ -528,7 +529,7 @@ const SimulationPageWithScenario = ({ scenario, onComplete }: { scenario: typeof
              {(isFinished || history.length >= 10) && (
                  <div className="mt-4 text-center">
                     <button 
-                        onClick={() => onComplete(history)}
+                        onClick={() => onComplete(history, prefilledAssessment)}
                         className="btn-glossy-blue"
                     >
                         Finish and begin self-assessment
@@ -541,9 +542,11 @@ const SimulationPageWithScenario = ({ scenario, onComplete }: { scenario: typeof
 
 const ReviewPage = ({ 
     simulationTranscript,
+    prefilledAssessment,
     onComplete,
 }: { 
     simulationTranscript: Message[];
+    prefilledAssessment: SelfAssessment | null;
     onComplete: (data: {selfAssessment: SelfAssessment, caseworkerAnalysis: CaseworkerAnalysis, supervisorFeedback: string, supervisorAnalysis: SupervisorAnalysis}) => void;
 }) => {
     type Stage = 'self-assessment' | 'caseworker-analysis' | 'caseworker-analysis-complete' | 'final';
@@ -555,7 +558,6 @@ const ReviewPage = ({
     const [caseworkerAnalysis, setCaseworkerAnalysis] = useState<CaseworkerAnalysis | null>(null);
     const [supervisorFeedback, setSupervisorFeedback] = useState('');
     const [supervisorAnalysis, setSupervisorAnalysis] = useState<SupervisorAnalysis | null>(null);
-    const [hasPrefilled, setHasPrefilled] = useState(false);
     
     // Streaming state
     const [streamingText, setStreamingText] = useState('');
@@ -572,10 +574,14 @@ const ReviewPage = ({
     }, []);
 
     const handlePrefillSelfAssessment = () => {
-        // Select a random example
-        const randomExample = SELF_ASSESSMENT_EXAMPLES[Math.floor(Math.random() * SELF_ASSESSMENT_EXAMPLES.length)];
-        setSelfAssessment(randomExample.assessment);
-        setHasPrefilled(true);
+        // If a prefilled assessment exists from the simulation, use it.
+        if (prefilledAssessment) {
+            setSelfAssessment(prefilledAssessment);
+        } else {
+            // Otherwise, select a random example for users who didn't prefill the transcript
+            const randomExample = SELF_ASSESSMENT_EXAMPLES[Math.floor(Math.random() * SELF_ASSESSMENT_EXAMPLES.length)];
+            setSelfAssessment(randomExample.assessment);
+        }
         
         // Auto-scroll to bottom after a brief delay to ensure state updates
         setTimeout(() => {
@@ -709,22 +715,20 @@ const ReviewPage = ({
             case 'self-assessment':
                 return (
                     <form onSubmit={handleSelfAssessmentSubmit} className="self-assessment-form">
-                        {!hasPrefilled && Object.keys(selfAssessment).length === 0 && (
-                            <button
-                                type="button"
-                                onClick={handlePrefillSelfAssessment}
-                                className="glossy-chip-surface"
-                                style={{
-                                    position: 'absolute',
-                                    top: 'var(--unit-6)',
-                                    right: 'var(--unit-6)',
-                                    zIndex: 10
-                                }}
-                            >
-                                <MagicWandIcon className="w-4 h-4" />
-                                <span>Prefill Example</span>
-                            </button>
-                        )}
+                        <button
+                            type="button"
+                            onClick={handlePrefillSelfAssessment}
+                            className="glossy-chip-surface"
+                            style={{
+                                position: 'absolute',
+                                top: 'var(--unit-6)',
+                                right: 'var(--unit-6)',
+                                zIndex: 10
+                            }}
+                        >
+                            <MagicWandIcon className="w-4 h-4" />
+                            <span>Prefill Example</span>
+                        </button>
                         <h3 className="assessment-title">Post-Simulation Self-Assessment</h3>
                         <p className="assessment-subtitle">Reflect on your performance during the simulation based on the core criteria.</p>
                         <div className="assessment-criteria-container">
@@ -972,6 +976,7 @@ export default function App() {
     });
     const [selectedScenario, setSelectedScenario] = useState<typeof SIMULATION_SCENARIOS[0] | null>(null);
     const [simulationTranscript, setSimulationTranscript] = useState<Message[]>([]);
+    const [prefilledSelfAssessment, setPrefilledSelfAssessment] = useState<SelfAssessment | null>(null);
     const [contentVisible, setContentVisible] = useState(false);
 
     const handleSplashComplete = (persona: 'caseworker' | 'supervisor') => {
@@ -1002,6 +1007,7 @@ export default function App() {
         setAppState(prev => ({ ...prev, page: 'home' }));
         setSelectedScenario(null);
         setSimulationTranscript([]);
+        setPrefilledSelfAssessment(null);
     };
 
     const handleScenarioSelect = (scenario: typeof SIMULATION_SCENARIOS[0]) => {
@@ -1009,8 +1015,9 @@ export default function App() {
         handlePageChange('simulation-with-scenario');
     };
 
-    const handleSimulationComplete = (transcript: Message[]) => {
+    const handleSimulationComplete = (transcript: Message[], assessment: SelfAssessment | null) => {
         setSimulationTranscript(transcript);
+        setPrefilledSelfAssessment(assessment);
         handlePageChange('review');
     };
 
@@ -1046,6 +1053,7 @@ export default function App() {
                     {appState.page === 'review' && (
                         <ReviewPage 
                             simulationTranscript={simulationTranscript}
+                            prefilledAssessment={prefilledSelfAssessment}
                             onComplete={handleReviewComplete}
                         />
                     )}
