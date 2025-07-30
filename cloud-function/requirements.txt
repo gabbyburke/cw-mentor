@@ -1,5 +1,0 @@
-functions-framework==3.8.3
-Flask==3.1.1
-google-cloud-aiplatform==1.71.1
-vertexai==1.71.1
-google-auth==2.40.3
