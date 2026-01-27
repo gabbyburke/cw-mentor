@@ -103,3 +103,9 @@ Thumbs.db
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
+
+# Python virtual environment
+venv/
+env/
+*.pyc
+__pycache__/

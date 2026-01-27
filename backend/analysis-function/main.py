@@ -1,3 +1,19 @@
+"""
+Copyright 2026 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import functions_framework
 from flask import jsonify, Response
 from google import genai
@@ -11,11 +27,17 @@ from typing import List, Dict, Tuple
 # --- Initialize Logging ---
 logging.basicConfig(level=logging.INFO)
 
+# --- Configuration Constants ---
+MODEL_NAME = "gemini-2.5-flash"
+DEFAULT_TEMPERATURE = 0.3
+MAX_OUTPUT_TOKENS = 32768
+THINKING_BUDGET = 24576
+
 # --- Initialize Google GenAI ---
 try:
-    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "wz-case-worker-mentor")
+    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
     if not project_id:
-        logging.warning("GOOGLE_CLOUD_PROJECT environment variable not set.")
+        raise ValueError("GOOGLE_CLOUD_PROJECT environment variable must be set")
     
     # Initialize the client
     client = genai.Client(
@@ -26,14 +48,18 @@ try:
     logging.info(f"Google GenAI initialized for project '{project_id}'")
 except Exception as e:
     logging.error(f"CRITICAL: Error initializing Google GenAI: {e}", exc_info=True)
-
-MODEL_NAME = "gemini-2.5-flash"
+    raise
 
 # Configure RAG tool with curriculum datastore
+# Datastore ID should be set via environment variable
+DATASTORE_ID = os.environ.get(
+    "VERTEX_AI_DATASTORE_ID",
+    "projects/wz-case-worker-mentor/locations/global/collections/default_collection/dataStores/curriculum_1752784944010"
+)
 RAG_TOOL = types.Tool(
     retrieval=types.Retrieval(
         vertex_ai_search=types.VertexAISearch(
-            datastore="projects/wz-case-worker-mentor/locations/global/collections/default_collection/dataStores/curriculum_1752784944010"
+            datastore=DATASTORE_ID
         )
     )
 )
@@ -128,7 +154,7 @@ def handle_chat(request_json, headers):
         # Configure generation with RAG grounding
         config = types.GenerateContentConfig(
             temperature=0.7,
-            max_output_tokens=1024,
+            max_output_tokens=4096,
             safety_settings=[
                 types.SafetySetting(
                     category="HARM_CATEGORY_HARASSMENT",
@@ -309,8 +335,8 @@ Respond with JSON in this exact format. Do not include any text outside the JSON
         
         # Configure generation with thinking mode and RAG grounding
         config = types.GenerateContentConfig(
-            temperature=0.3,
-            max_output_tokens=32768,
+            temperature=DEFAULT_TEMPERATURE,
+            max_output_tokens=MAX_OUTPUT_TOKENS,
             safety_settings=[
                 types.SafetySetting(
                     category="HARM_CATEGORY_HARASSMENT",
@@ -331,7 +357,7 @@ Respond with JSON in this exact format. Do not include any text outside the JSON
             ],
             tools=[RAG_TOOL],  # Enable RAG grounding for curriculum-based analysis
             thinking_config=types.ThinkingConfig(
-                thinking_budget=24576,  # Maximum allowed value
+                thinking_budget=THINKING_BUDGET,
                 include_thoughts=True  # Include thoughts in streaming
             ),
         )
@@ -343,11 +369,13 @@ Respond with JSON in this exact format. Do not include any text outside the JSON
             """Generator function for streaming response"""
             chunk_index = 0
             raw_stream_accumulator = []  # Accumulate all chunks for final logging
+            debug_mode = os.environ.get("DEBUG_STREAMING", "false").lower() == "true"
             
             try:
-                print("=" * 80)
-                print("RAW STREAMING OUTPUT START")
-                print("=" * 80)
+                if debug_mode:
+                    print("=" * 80)
+                    print("RAW STREAMING OUTPUT START")
+                    print("=" * 80)
                 
                 # Stream the response from the model
                 for chunk in client.models.generate_content_stream(
@@ -420,25 +448,27 @@ Respond with JSON in this exact format. Do not include any text outside the JSON
                     # Store chunk in accumulator
                     raw_stream_accumulator.append(json.dumps(chunk_data, ensure_ascii=False))
                     
-                    # Print raw chunk for debugging in cloud logs
-                    print(json.dumps(chunk_data, ensure_ascii=False))
+                    # Print raw chunk for debugging in cloud logs (only if debug mode enabled)
+                    if debug_mode:
+                        print(json.dumps(chunk_data, ensure_ascii=False))
                     
                     # Output raw JSON structure with newline delimiter
                     yield json.dumps(chunk_data, ensure_ascii=False) + "\n"
                 
-                # Print final summary of raw stream
-                print("\n" + "=" * 80)
-                print("RAW STREAMING OUTPUT COMPLETE")
-                print("=" * 80)
-                print(f"Total chunks: {chunk_index}")
-                print("=" * 80)
-                print("FULL RAW STREAM:")
-                print("=" * 80)
-                for chunk_str in raw_stream_accumulator:
-                    print(chunk_str)
-                print("=" * 80)
-                print("END OF RAW STREAMING OUTPUT")
-                print("=" * 80)
+                # Print final summary of raw stream (only if debug mode enabled)
+                if debug_mode:
+                    print("\n" + "=" * 80)
+                    print("RAW STREAMING OUTPUT COMPLETE")
+                    print("=" * 80)
+                    print(f"Total chunks: {chunk_index}")
+                    print("=" * 80)
+                    print("FULL RAW STREAM:")
+                    print("=" * 80)
+                    for chunk_str in raw_stream_accumulator:
+                        print(chunk_str)
+                    print("=" * 80)
+                    print("END OF RAW STREAMING OUTPUT")
+                    print("=" * 80)
                 
                 logging.info(f"Streaming complete - total chunks: {chunk_index}")
                     
@@ -519,8 +549,8 @@ def handle_supervisor_analysis(request_json, headers):
         contents = [types.Content(role="user", parts=[types.Part(text=prompt)])]
         
         config = types.GenerateContentConfig(
-            temperature=0.3,
-            max_output_tokens=32768,
+            temperature=DEFAULT_TEMPERATURE,
+            max_output_tokens=MAX_OUTPUT_TOKENS,
             safety_settings=[
                 types.SafetySetting(
                     category="HARM_CATEGORY_HARASSMENT",
@@ -541,7 +571,7 @@ def handle_supervisor_analysis(request_json, headers):
             ],
             tools=[RAG_TOOL],
             thinking_config=types.ThinkingConfig(
-                thinking_budget=24576,
+                thinking_budget=THINKING_BUDGET,
                 include_thoughts=True
             ),
         )

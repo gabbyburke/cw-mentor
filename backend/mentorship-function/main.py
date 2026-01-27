@@ -1,3 +1,19 @@
+"""
+Copyright 2026 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import functions_framework
 from flask import jsonify
 from google import genai
@@ -5,6 +21,11 @@ from google.genai import types
 import os
 import json
 import logging
+
+# --- Configuration Constants ---
+MODEL_NAME = "gemini-2.5-flash"
+DEFAULT_TEMPERATURE = 0.7
+MAX_OUTPUT_TOKENS = 4096
 
 # --- Initialize Logging ---
 logging.basicConfig(level=logging.INFO)
@@ -58,9 +79,13 @@ def handle_mentorship_chat(request_json, headers):
             return (jsonify({'error': 'Missing message field'}), 400, headers)
 
         # Initialize the genai client
+        project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
+        if not project_id:
+            return (jsonify({'error': 'GOOGLE_CLOUD_PROJECT environment variable must be set'}), 500, headers)
+        
         client = genai.Client(
             vertexai=True,
-            project="gb-demos",
+            project=project_id,
             location="global",
         )
 
@@ -107,7 +132,7 @@ You are a compassionate, pragmatic, and encouraging social worker assistant. You
 "Hey there! It's great to connect. I'm an AI assistant, and I'm here to offer some insights, support, or just be a sounding board as you navigate your studies and journey into the field. What's on your mind today? Are you grappling with a particular class, a situation in your practicum, or just thinking about what's next?"
 """
 
-        model = "gemini-2.5-flash"
+        # Model is now defined as a constant at the top of the file
         
         # Build conversation history for context
         contents = []
@@ -125,13 +150,17 @@ You are a compassionate, pragmatic, and encouraging social worker assistant. You
         ))
         
         # Configure RAG tools
+        rag_corpus_id = os.environ.get(
+            "VERTEX_RAG_CORPUS_ID",
+            "projects/gb-demos/locations/us-central1/ragCorpora/6917529027641081856"
+        )
         tools = [
             types.Tool(
                 retrieval=types.Retrieval(
                     vertex_rag_store=types.VertexRagStore(
                         rag_resources=[
                             types.VertexRagStoreRagResource(
-                                rag_corpus="projects/gb-demos/locations/us-central1/ragCorpora/6917529027641081856"
+                                rag_corpus=rag_corpus_id
                             )
                         ],
                         similarity_top_k=20,
@@ -142,10 +171,10 @@ You are a compassionate, pragmatic, and encouraging social worker assistant. You
 
         # Configure generation settings
         generate_content_config = types.GenerateContentConfig(
-            temperature=0.7,
+            temperature=DEFAULT_TEMPERATURE,
             top_p=1,
             seed=0,
-            max_output_tokens=4096,
+            max_output_tokens=MAX_OUTPUT_TOKENS,
             safety_settings=[
                 types.SafetySetting(
                     category="HARM_CATEGORY_HATE_SPEECH",
@@ -173,7 +202,7 @@ You are a compassionate, pragmatic, and encouraging social worker assistant. You
 
         # Generate response
         response = client.models.generate_content(
-            model=model,
+            model=MODEL_NAME,
             contents=contents,
             config=generate_content_config,
         )

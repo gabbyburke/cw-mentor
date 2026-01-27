@@ -1,3 +1,19 @@
+/*
+Copyright 2026 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 
 import type { CaseworkerAnalysis, SelfAssessment, SupervisorAnalysis, Message } from '../types/types';
 import { 
@@ -7,15 +23,20 @@ import {
   SUPERVISOR_ANALYSIS_SCHEMA
 } from '../utils/constants';
 
-// Temporarily commented out for local development
-// if (!import.meta.env.VITE_CLOUD_FUNCTION_URL) {
-//   throw new Error("CLOUD_FUNCTION_URL environment variable not set.");
-// }
+// Cloud Function configuration - these must be set in environment variables
+const CLOUD_FUNCTION_URL = import.meta.env.VITE_CLOUD_FUNCTION_URL;
+const MENTORSHIP_FUNCTION_URL = import.meta.env.VITE_MENTORSHIP_FUNCTION_URL;
+const SIMULATION_FUNCTION_URL = import.meta.env.VITE_SIMULATION_FUNCTION_URL;
 
-// Cloud Function configuration
-const CLOUD_FUNCTION_URL = import.meta.env.VITE_CLOUD_FUNCTION_URL || 'https://us-central1-wz-case-worker-mentor.cloudfunctions.net/analysis-function';
-const MENTORSHIP_FUNCTION_URL = import.meta.env.VITE_MENTORSHIP_FUNCTION_URL || 'https://psu-mentor-demo-807576987550.us-central1.run.app';
-const SIMULATION_FUNCTION_URL = import.meta.env.VITE_SIMULATION_FUNCTION_URL || 'https://psu-simulation-807576987550.us-central1.run.app';
+if (!CLOUD_FUNCTION_URL) {
+  throw new Error("VITE_CLOUD_FUNCTION_URL environment variable not set.");
+}
+if (!MENTORSHIP_FUNCTION_URL) {
+  throw new Error("VITE_MENTORSHIP_FUNCTION_URL environment variable not set.");
+}
+if (!SIMULATION_FUNCTION_URL) {
+  throw new Error("VITE_SIMULATION_FUNCTION_URL environment variable not set.");
+}
 
 // Simple chat session simulation using Cloud Function
 export function createChatSession(systemInstruction: string, history: Message[] = []) {
